@@ -1,0 +1,13 @@
+Alternativa,Bar,Sex_Sab,Fome,Pessoas,Preco,Chuva,Reserva,Tipo,Estimativa,Esperar
+Sim,Não,Não,Sim,Alguns,Alto,Não,Sim,Francês,0-10,Sim
+Sim,Sim,Sim,Sim,Cheio,Barato,Não,Não,Tailandês,30-60,Não
+Não,Sim,Não,Sim,Alguns,Barato,Não,Sim,Hambúrguer,0-10,Sim
+Sim,Não,Sim,Sim,Cheio,Moderado,Não,Sim,Tailandês,10-30,Sim
+Sim,Sim,Não,Sim,Cheio,Alto,Sim,Sim,Francês,>60,Sim
+Não,Sim,Sim,Não,Nenhum,Barato,Sim,Sim,Italiano,0-10,Não
+Não,Não,Não,Sim,Alguns,Moderado,Sim,Não,Hambúrguer,0-10,Sim
+Não,Não,Sim,Não,Alguns,Moderado,Não,Não,Tailandês,>60,Não
+Sim,Sim,Sim,Sim,Cheio,Moderado,Não,Sim,Hambúrguer,10-30,Sim
+Sim,Sim,Não,Sim,Cheio,Alto,Não,Não,Italiano,>60,Não
+Não,Sim,Sim,Sim,Nenhum,Barato,Não,Não,Tailandês,0-10,Não
+Sim,Não,Sim,Sim,Cheio,Barato,Sim,Sim,Hambúrguer,30-60,Sim
