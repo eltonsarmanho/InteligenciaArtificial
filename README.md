@@ -22,8 +22,6 @@ Este repositório contém os materiais utilizados na disciplina de Inteligência
 - Python 3.9 ou superior
 - Pacotes: `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `tensorflow`, `langchain`
 
-Aqui está a versão ajustada para o README:
-
 ---
 
 ## Licença
