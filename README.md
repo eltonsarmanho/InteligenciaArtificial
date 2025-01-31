@@ -14,6 +14,8 @@ Este repositório contém os materiais utilizados na disciplina de Inteligência
   Visão geral do aprendizado supervisionado e não supervisionado com exemplos usando scikit-learn.
 - **Regressão Linear e Polinomial** (`Regressao.ipynb`):
   Aplicação prática de modelos de regressão para análise de dados e previsão.
+- **Introdução ao LangChain** (`langchain.ipynb`):  
+  Demonstração prática de como utilizar a biblioteca LangChain para desenvolver aplicações com modelos de linguagem. Inclui exemplos de pipelines e integração com APIs para processamento de linguagem natural.
 
 
 ## Requisitos
