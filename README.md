@@ -20,3 +20,22 @@ Este repositório contém os materiais utilizados na disciplina de Inteligência
 - Python 3.9 ou superior
 - Pacotes: `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `tensorflow`, `langchain`
 
+Aqui está a versão ajustada para o README:
+
+---
+
+## Licença
+
+Este material está licenciado sob a licença **[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)**.
+
+Você tem permissão para:
+- **Compartilhar** — copiar e redistribuir o material em qualquer suporte ou formato.
+- **Adaptar** — remixar, transformar e criar a partir do material.
+
+Desde que respeite as seguintes condições:
+- **Atribuição** — É necessário dar o crédito apropriado, incluir um link para a licença e indicar se mudanças foram feitas. Isso deve ser feito de forma razoável, mas sem sugerir qualquer endosso pelo autor original.
+- **Não Comercial** — O material não pode ser usado para fins comerciais.
+- **Compartilhamento pela Mesma Licença** — Caso altere, transforme ou crie algo novo com base no material, é necessário distribuir suas contribuições sob a mesma licença do original.
+
+Para mais detalhes, acesse [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
