@@ -16,6 +16,8 @@ Este repositório contém os materiais utilizados na disciplina de Inteligência
   Aplicação prática de modelos de regressão para análise de dados e previsão.
 - **Introdução ao LangChain** (`langchain.ipynb`):  
   Demonstração prática de como utilizar a biblioteca LangChain para desenvolver aplicações com modelos de linguagem. Inclui exemplos de pipelines e integração com APIs para processamento de linguagem natural.
+- **Retrieval Augmented Generation (RAG)** (`RAG.ipynb`):  
+  Implementação de um pipeline completo de RAG, combinando recuperação de informações e geração de linguagem. Inclui técnicas como **Stuff**, **Map-Reduce** e **Refine** para geração de respostas contextuais e precisas.
 
 
 ## Requisitos
