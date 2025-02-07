@@ -1,2 +1,7 @@
 .env
 arquivos/chroma_retrival_bd/4374c3b1-cdc7-4856-9dce-b9857fee94aa/data_level0.bin
+arquivos/chroma_retrival_bd/chroma.sqlite3
+arquivos/chroma_retrival_bd/531eb77e-46d6-48fe-8074-3024d2fee955/data_level0.bin
+arquivos/chroma_retrival_bd/531eb77e-46d6-48fe-8074-3024d2fee955/header.bin
+arquivos/chroma_retrival_bd/531eb77e-46d6-48fe-8074-3024d2fee955/length.bin
+arquivos/chroma_retrival_bd/531eb77e-46d6-48fe-8074-3024d2fee955/link_lists.bin
