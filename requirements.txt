@@ -1,13 +1,13 @@
 ipykernel
-langchain-openai==0.2.13
-langchain-core==0.3.27
-langchain==0.3.13
-langchain-community==0.3.13
-huggingface_hub==0.27.0
-langchain-huggingface==0.1.2
-transformers==4.47.1
-jinja2==3.1.4
-pypdf==5.1.0
+langchain-openai
+langchain-core
+langchain
+langchain-community
+huggingface_hub
+langchain-huggingface
+transformers
+jinja2
+pypdf
 yt_dlp
 pydub
 audioop-lts; python_version>='3.13'
@@ -15,6 +15,9 @@ beautifulsoup4==4.12.3
 sentence-transformers==3.3.1
 langchain-chroma==0.1.4
 faiss-cpu==1.9.0.post1
-lark==1.2.2
+lark
 scikit-learn
 tensorflow
+scikit-fuzzy # Alterado de 'skfuzzy' para 'scikit-fuzzy'
+matplotlib
+pandas
