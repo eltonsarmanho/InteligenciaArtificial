@@ -5,6 +5,7 @@ langchain
 langchain-community
 huggingface_hub
 langchain-huggingface
+langchain-ollama==0.3.3
 transformers
 jinja2
 pypdf
