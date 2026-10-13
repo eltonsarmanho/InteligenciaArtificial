@@ -22,18 +22,19 @@
 \pgfplotsset{compat=1.18}
 \usepackage{ragged2e}
 
-% --- Cores ---
+% Cores
 \definecolor{mineblue}{RGB}{0,90,180}
 \definecolor{mineorange}{RGB}{230,115,0}
 \definecolor{minegreen}{RGB}{34,139,34}
 \definecolor{minered}{RGB}{180,20,40}
 \definecolor{minegray}{RGB}{100,100,100}
 
-% --- Comandos auxiliares ---
+% Comandos auxiliares
 \newcommand{\reflexao}[1]{\begin{alertblock}{Reflexão}#1\end{alertblock}}
 \newcommand{\key}[1]{\underline{#1}}
+\newcommand{\citacao}[1]{\hfill\textcolor{minegray}{\tiny #1}}
 
-% --- Dados do Título ---
+% Dados do título
 \title[Mineração de Dados]{Mineração de Dados: Conceitos e Aplicações}
 \subtitle{Módulo 7: Aplicações}
 \author[Elton Sarmanho]{
@@ -45,7 +46,7 @@
 }
 \date{\today}
 
-% --- TikZ estilos ---
+% Estilos TikZ
 \tikzstyle{block} = [rectangle,draw,fill=mineblue!20,text width=5em,
                      text centered,rounded corners,minimum height=3em,
                      font=\small]
@@ -65,11 +66,11 @@
 \end{frame}
 
 % Roteiro
-\begin{frame}[shrink=5]{Roteiro da Aula}
+\begin{frame}{Roteiro da Aula}
     \tableofcontents[sections={1-3}]
 \end{frame}
 
-\begin{frame}[shrink=5]{Roteiro da Aula}
+\begin{frame}{Roteiro da Aula}
    \tableofcontents[sections={4-9}]
 \end{frame}
 
@@ -99,6 +100,13 @@
     \end{columns}
 \end{frame}
 
+\begin{frame}{RAG como consulta a evidências}
+    \centering
+    \includegraphics[width=0.6\textwidth,height=0.40\textheight,keepaspectratio]{img/rag_consulta_acervo.png}
+    \captionof{figure}{Um \textit{agent} consulta documentos do acervo antes de formular uma resposta.}
+    \reflexao{Qual informação da fonte precisa acompanhar a resposta para que o estudante possa conferi-la?}
+\end{frame}
+
 \begin{frame}{Retrieval-Augmented Generation (RAG)}
     \begin{block}{Definição (Lewis et al., 2020)}
         \footnotesize
@@ -106,22 +114,35 @@
     \end{block}
     \pause
     \[
-      p(y \mid x) \approx \sum_{z \in \text{top-}k(p(\cdot\mid x))} p_{\eta}(z \mid x)\; p_{\theta}(y \mid x, z)
+      p(y \mid x) \approx \sum_{z \in \mathcal{Z}_k(x)} p_{\eta}(z \mid x)\; p_{\theta}(y \mid x, z)
     \]
-    \footnotesize $p_\eta$: modelo de recuperação (\textit{retriever}); $p_\theta$: modelo gerador (LLM); $z$: documentos recuperados.
+    \footnotesize $\mathcal{Z}_k(x)$: $k$ evidências recuperadas para a pergunta $x$; $p_\eta$: \textit{retriever}; $p_\theta$: gerador; $z$: evidência.
     \pause
     \begin{alertblock}{}
-        \footnotesize RAG \textbf{não} substitui \textit{fine-tuning}: é preferível quando o conhecimento muda com frequência e é preciso citar fontes.
+        \footnotesize RAG e \textit{fine-tuning} resolvem problemas diferentes. RAG atualiza conhecimento e permite atribuição de fontes; \textit{fine-tuning} altera comportamento ou adapta o modelo a uma tarefa.
     \end{alertblock}
 \end{frame}
 
 \subsection{Arquitetura e Paradigmas}
 
 \begin{frame}{Pipeline RAG: Visão Geral}
-    \begin{center}
-        \includegraphics[width=0.95\textwidth]{figs/rag.png}
-    \end{center}
-    \centering\footnotesize Carregamento $\to$ Divisão $\to$ Embedding $\to$ Banco Vetorial $\to$ Recuperação $\to$ Geração
+    \centering
+    \begin{tikzpicture}[
+      box/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,
+      minimum width=2.05cm,minimum height=.78cm,align=center,font=\footnotesize},
+      arrow/.style={-{Stealth[length=5pt]},mineblue,thick}
+    ]
+      \node[box] (docs) {Documentos\\+ metadados};
+      \node[box,right=.55cm of docs] (chunks) {Divisão em\\fragmentos};
+      \node[box,right=.55cm of chunks] (index) {\textit{Embeddings}\\[-1pt] e índice};
+      \node[box,right=.55cm of index] (store) {Banco\\vetorial};
+      \draw[arrow] (docs)--(chunks); \draw[arrow] (chunks)--(index); \draw[arrow] (index)--(store);
+      \node[box,fill=minegreen!12,draw=minegreen,below=1.25cm of store] (retrieve) {Pergunta $\to$\\recuperação};
+      \node[box,fill=minered!12,draw=minered,left=.7cm of retrieve] (llm) {LLM com\\evidências};
+      \node[box,fill=mineorange!12,draw=mineorange,left=.7cm of llm] (answer) {Resposta com\\citações};
+      \draw[arrow] (store)--(retrieve); \draw[arrow] (retrieve)--(llm); \draw[arrow] (llm)--(answer);
+    \end{tikzpicture}
+    \reflexao{Em que etapa uma referência de página ou seção deve acompanhar o fragmento para que a resposta possa ser auditada?}
 \end{frame}
 
 \begin{frame}[shrink=5]{Pipeline RAG: Diagrama Esquemático}
@@ -143,7 +164,7 @@
       \draw[arr] (split) -- (emb);
       \draw[arr] (emb) -- (vec);
       \draw[arr] (vec) -- (ret);
-      \draw[arr] (query) -- (ret);
+      \draw[arr] (query.south) -- ++(0,-0.70) -| (ret.south);
       \draw[arr] (ret) -- (llm);
       \draw[arr] (llm) -- (ans);
     \end{tikzpicture}
@@ -151,7 +172,7 @@
 
 \begin{frame}{Paradigmas de RAG (Gao et al., 2024)}
     \begin{block}{Naive RAG}
-        \footnotesize Pipeline direto: indexar $\to$ recuperar $\to$ gerar. Simples, mas com baixa precisão e redundância.
+        \footnotesize Pipeline direto: indexar $\to$ recuperar $\to$ gerar. É um bom ponto de partida, mas pode trazer contexto redundante ou insuficiente.
     \end{block}
     \pause
     \begin{block}{Advanced RAG}
@@ -173,16 +194,16 @@
     \begin{columns}
         \column{0.5\textwidth}
         \begin{block}{Dados Estruturados}
-            \footnotesize Tabelas, planilhas, bancos relacionais, CSV/JSON --- já seguem um esquema definido.
+            \footnotesize Tabelas, planilhas, bancos relacionais e CSV/JSON costumam seguir um esquema definido.
         \end{block}
         \column{0.5\textwidth}
         \begin{block}{Dados Não Estruturados}
-            \footnotesize PDFs, páginas web, áudio/vídeo, e-mails --- exigem \textit{parsers} especializados.
+            \footnotesize PDFs, páginas web, áudio, vídeo e e-mails exigem extração e \textit{parsers} adequados.
         \end{block}
     \end{columns}
     \pause
     \begin{alertblock}{Importante}
-        \footnotesize Preserve metadados (página, seção, autor, data) durante o carregamento --- são essenciais para citar a fonte na resposta final.
+        \footnotesize Preserve metadados como página, seção, autor e data. Eles permitem localizar e citar a fonte na resposta final.
     \end{alertblock}
 \end{frame}
 
@@ -190,7 +211,7 @@
 
 \begin{frame}{Por que Dividir Documentos em \textit{Chunks}?}
     \begin{block}{Motivação}
-        \footnotesize Documentos completos excedem a janela de contexto do LLM e diluem a relevância semântica de um único \textit{embedding}.
+        \footnotesize Mesmo quando cabem na janela de contexto, documentos inteiros tornam a recuperação menos seletiva. Fragmentos bem formados ligam uma evidência específica à pergunta.
     \end{block}
     \pause
     \begin{exampleblock}{Divisão Mal Feita}
@@ -208,7 +229,17 @@
     \begin{columns}
         \column{0.55\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figs/chunk_overlap.png}
+        \begin{tikzpicture}[font=\scriptsize]
+          \draw[fill=mineblue!16,draw=mineblue] (0,1.25) rectangle (3.8,1.78);
+          \draw[fill=minegreen!18,draw=minegreen] (1.20,.60) rectangle (5.00,1.13);
+          \draw[fill=mineorange!22,draw=mineorange] (2.40,-.05) rectangle (6.20,.48);
+          \node at (1.9,1.515) {fragmento 1};
+          \node at (3.1,.865) {fragmento 2};
+          \node at (4.3,.215) {fragmento 3};
+          \draw[<->,thick] (1.20,2.08) -- node[above]{\textit{overlap}} (3.80,2.08);
+          \draw[densely dashed,gray] (1.20,1.78)--(1.20,.60);
+          \draw[densely dashed,gray] (3.80,1.78)--(3.80,.60);
+        \end{tikzpicture}
         \column{0.45\textwidth}
         \begin{itemize}\footnotesize
             \item \textbf{chunk\_size:} tamanho do fragmento (caracteres/\textit{tokens})
@@ -216,8 +247,7 @@
         \end{itemize}
         \pause
         \begin{alertblock}{}
-            \footnotesize Pequeno $\Rightarrow$ mais preciso, menos contexto.\\
-            Grande $\Rightarrow$ mais contexto, menos preciso.
+            \footnotesize Fragmentos muito curtos perdem relações locais. Fragmentos muito longos aumentam ruído e custo. Ajuste com consultas reais do acervo.
         \end{alertblock}
     \end{columns}
 \end{frame}
@@ -228,8 +258,8 @@
     \toprule
     Estratégia & Funcionamento & Uso \\
     \midrule
-    Fixed-size & Corta a cada $N$ caracteres, sem estrutura semântica & Textos simples \\
-    Recursivo & Respeita hierarquia (parágrafo $\to$ linha $\to$ frase) & Padrão recomendado \\
+    Fixed-size & Corta a cada $N$ unidades, com pouca noção de estrutura & Linhas ou registros uniformes \\
+    Recursivo & Tenta preservar parágrafos e frases antes de cortar & Ponto de partida para prosa \\
     Estrutural & Usa sintaxe do formato (Markdown/HTML/código) & Doc.\ técnica, código \\
     Semântico & Agrupa sentenças por similaridade de \textit{embedding} & Textos longos e heterogêneos \\
     \bottomrule
@@ -237,7 +267,7 @@
     \end{center}
     \pause
     \begin{alertblock}{Boas Práticas}
-        \footnotesize \texttt{chunk\_size} $\in [300, 1000]$ caracteres; \texttt{chunk\_overlap} $\approx$ 10--20\% do \texttt{chunk\_size}. Sempre preserve metadados por \textit{chunk}.
+        \footnotesize Meça o tamanho em \textit{tokens} do modelo escolhido. Comece com fragmentos que preservem uma ideia completa e teste tamanho, sobreposição e $k$ com perguntas representativas. Mantenha metadados por fragmento.
     \end{alertblock}
 \end{frame}
 
@@ -270,7 +300,7 @@
     TF-IDF & Vetores esparsos por frequência; sem sinônimos \\
     Word2Vec/GloVe (2013--14) & Vetores densos estáticos por palavra \\
     BERT (2018) & Vetores contextuais (dependem da frase) \\
-    Sentence-BERT/OpenAI/Gemini (2019+) & Um vetor por frase/parágrafo, otimizado p/ similaridade \\
+    Modelos de sentença (2019+) & Um vetor por frase/parágrafo, otimizado para similaridade \\
     \bottomrule
     \end{tabular}
     \end{center}
@@ -284,7 +314,7 @@
     \end{block}
     \pause
     \begin{alertblock}{Vetores normalizados}
-        \footnotesize Quando $\|\mathbf{u}\|=\|\mathbf{v}\|=1$, a similaridade de cosseno reduz-se ao produto escalar $\mathbf{u}\cdot\mathbf{v}$ --- explorado para acelerar buscas em larga escala.
+        \footnotesize Quando $\|\mathbf{u}\|=\|\mathbf{v}\|=1$, a similaridade de cosseno é o produto escalar $\mathbf{u}\cdot\mathbf{v}$. Essa propriedade simplifica muitos índices vetoriais.
     \end{alertblock}
     \pause
     \begin{exampleblock}{}
@@ -294,26 +324,23 @@
 
 \subsection{Modelos de Embedding}
 
-\begin{frame}[shrink=5]{Modelos de Embedding Disponíveis}
+\begin{frame}{Modelos de Embedding Disponíveis}
     \begin{center}\footnotesize
     \begin{tabular}{>{\bfseries}p{3.0cm}p{2.6cm}p{5.2cm}}
     \toprule
     Modelo & Provedor & Observação \\
     \midrule
     text-embedding-3-large & OpenAI & Alta precisão, dimensão configurável, pago \\
-    Gemini Embedding & Google & Multimodal (texto/imagem/áudio/vídeo/PDF) \\
+    Modelos multimodais & Diversos & Podem representar mais de um tipo de dado, conforme o modelo e a API \\
     BGE-M3 / Jina & BAAI / Jina AI & Abertos, executáveis localmente \\
     E5 / GTE & Microsoft / Alibaba & \textit{Baseline} amplamente usado \\
     \bottomrule
     \end{tabular}
     \end{center}
     \pause
-    \begin{alertblock}{MTEB --- Massive Text Embedding Benchmark}
-        \footnotesize Principal \textit{benchmark} público para comparar modelos de \textit{embedding}. Consulte o \textit{leaderboard} antes de escolher --- o mercado evolui rapidamente.
+    \begin{alertblock}{MTEB: Massive Text Embedding Benchmark}
+        \footnotesize Um dos principais \textit{benchmarks} públicos para comparar modelos de \textit{embedding}. Use resultados compatíveis com idioma, domínio e tipo de consulta. \faIcon{exclamation-triangle}\ Use o mesmo modelo para indexar e consultar.
     \end{alertblock}
-    \begin{block}{}
-        \footnotesize \faIcon{exclamation-triangle}\ O mesmo modelo usado para indexar documentos deve ser usado para a consulta.
-    \end{block}
 \end{frame}
 
 % ==============================================================================
@@ -326,11 +353,11 @@
     \end{block}
     \pause
     \begin{alertblock}{O Problema da Escala}
-        \footnotesize Busca exata k-NN: $O(n \cdot d)$ --- inviável para milhões de documentos. Solução: \textbf{ANN} (\textit{Approximate Nearest Neighbors}).
+        \footnotesize Busca exata k-NN custa $O(n \cdot d)$ por consulta. Em coleções grandes, índices \textbf{ANN} (\textit{Approximate Nearest Neighbors}) negociam uma pequena perda de \textit{recall} por menor latência.
     \end{alertblock}
     \pause
     \begin{itemize}\footnotesize
-        \item \textbf{HNSW:} grafo hierárquico de vizinhança (Malkov \& Yashunin, 2018) --- padrão em produção
+        \item \textbf{HNSW:} grafo hierárquico de vizinhança (Malkov \& Yashunin, 2018), com boa latência e maior uso de memória
         \item \textbf{IVF:} particiona o espaço em \textit{clusters} (K-Means)
         \item \textbf{PQ:} comprime vetores, reduz uso de memória
     \end{itemize}
@@ -342,16 +369,16 @@
     \toprule
     Solução & Escala Ideal & Persistência & Observação \\
     \midrule
-    Chroma & $\sim$100 mil docs & Automática & Simples, ótima p/ prototipagem \\
-    FAISS & Milhões de vetores & Manual & Rápida, embarcada (Meta AI) \\
-    Pinecone/Weaviate/Milvus & Produção larga escala & Gerenciada & Multi-tenant, alta disponibilidade \\
+    Chroma & Protótipos e aplicações locais & Disponível & API simples para experimentar \\
+    FAISS & Índices embarcados & A cargo da aplicação & Biblioteca rápida para busca vetorial \\
+    Pinecone, Weaviate, Milvus & Serviços ou clusters & Depende da implantação & Recursos operacionais e de escalabilidade variam \\
     pgvector & Integra c/ dados relacionais & Nativa PostgreSQL & Combina busca vetorial + SQL \\
     \bottomrule
     \end{tabular}
     \end{center}
     \pause
     \begin{alertblock}{Recomendação}
-        \footnotesize Ensino/protótipos: \textbf{Chroma} ou \textbf{FAISS}. Produção com múltiplos usuários: soluções gerenciadas ou \textbf{pgvector}.
+        \footnotesize Escolha pelo volume, filtros por metadados, latência, custo e requisitos de operação. Compare com dados e consultas semelhantes aos do projeto.
     \end{alertblock}
 \end{frame}
 
@@ -363,7 +390,7 @@
 
 \begin{frame}{Busca Semântica (\textit{Semantic Search})}
     \begin{block}{Definição}
-        \footnotesize Recupera os $k$ documentos com maior similaridade de cosseno ao \textit{embedding} da consulta --- por \textbf{significado}, não por palavra-chave.
+        \footnotesize Recupera os $k$ documentos com maior similaridade de cosseno ao \textit{embedding} da consulta, por \textbf{significado}, não apenas por palavra-chave.
     \end{block}
     \pause
     \begin{columns}
@@ -378,7 +405,7 @@
     \end{columns}
 \end{frame}
 
-\begin{frame}[shrink=5]{MMR --- Maximal Marginal Relevance}
+\begin{frame}[shrink=5]{MMR: Maximal Marginal Relevance}
     \begin{block}{Fórmula (Carbonell \& Goldstein, 1998)}
         \footnotesize
         \[
@@ -388,9 +415,25 @@
     \begin{columns}
         \column{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figs/mmr_diversidade.png}
+        \begin{tikzpicture}[scale=.78,font=\scriptsize]
+          \draw[->,gray] (0,0)--(5.2,0) node[right]{dimensão 1};
+          \draw[->,gray] (0,0)--(0,3.45) node[above]{dimensão 2};
+          \coordinate (q) at (4.05,2.55);
+          \coordinate (a) at (3.15,1.62);
+          \coordinate (b) at (4.62,1.70);
+          \coordinate (c) at (1.65,.68);
+          \draw[densely dashed,mineblue] (q) circle (1.28);
+          \draw[densely dotted,gray] (q)--(a);
+          \draw[densely dotted,gray] (q)--(b);
+          \draw[densely dotted,gray] (q)--(c);
+          \fill[mineblue] (q) circle (3pt) node[above=2pt]{consulta $Q$};
+          \fill[minegreen] (a) circle (3pt) node[below left=2pt]{A};
+          \fill[minegreen] (b) circle (3pt) node[below right=2pt]{B};
+          \fill[mineorange] (c) circle (3pt) node[above left=2pt]{C};
+        \end{tikzpicture}
         \column{0.5\textwidth}
-        \footnotesize $\lambda \to 1$: prioriza relevância.\\
+        \footnotesize A e B são relevantes, mas redundantes. C é menos próximo de $Q$, porém acrescenta diversidade.\\[4pt]
+        $\lambda \to 1$: prioriza relevância.\\
         $\lambda \to 0$: prioriza diversidade.
         \pause
         \begin{alertblock}{Quando usar}
@@ -402,7 +445,7 @@
 
 \begin{frame}{Busca Híbrida}
     \begin{block}{Densa + Esparsa}
-        \footnotesize Combina recuperação por \textit{embeddings} (densa) com BM25/TF-IDF (esparsa, lexical), somando \textit{scores} ou aplicando \textit{re-ranking}.
+        \footnotesize Combina recuperação por \textit{embeddings} (densa) com BM25 (esparsa e lexical). Os resultados podem ser fundidos por ranking ou reordenados por um \textit{reranker}.
     \end{block}
     \pause
     \begin{alertblock}{Quando usar}
@@ -414,7 +457,18 @@
 
 \begin{frame}{Pipeline RetrievalQA}
     \centering
-    \includegraphics[width=0.55\textwidth]{figs/retrievalqa_pipeline.png}
+    \begin{tikzpicture}[
+      node distance=.55cm,
+      box/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,
+      minimum width=2.15cm,minimum height=.8cm,align=center,font=\footnotesize},
+      arrow/.style={-{Stealth[length=5pt]},mineblue,thick}
+    ]
+      \node[box] (q) {Pergunta};
+      \node[box,right=of q] (r) {Recuperar\\$k$ fragmentos};
+      \node[box,right=of r] (p) {\textit{Prompt} com\\evidências};
+      \node[box,right=of p,fill=minegreen!12,draw=minegreen] (a) {Resposta +\\fontes};
+      \draw[arrow] (q)--(r); \draw[arrow] (r)--(p); \draw[arrow] (p)--(a);
+    \end{tikzpicture}
     \begin{block}{}
         \centering\footnotesize Pergunta $\to$ consulta ao banco vetorial $\to$ fragmentos relevantes $\to$ LLM $\to$ resposta.
     \end{block}
@@ -438,10 +492,35 @@
     \begin{columns}
         \column{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figs/stuff_method.png}
+        \textbf{Stuff}\\[3pt]
+        \begin{tikzpicture}[scale=.7,font=\scriptsize,
+          b/.style={rectangle,draw,rounded corners,minimum width=1.2cm,minimum height=.45cm,align=center},
+          a/.style={-{Stealth},thick}]
+          \node[b,fill=mineblue!12] (c1) at (0,1.2) {$c_1$};
+          \node[b,fill=mineblue!12] (c2) at (1.4,1.2) {$c_2$};
+          \node[b,fill=mineblue!12] (c3) at (2.8,1.2) {$c_3$};
+          \node[b,fill=minered!12] (llm) at (1.4,0) {um \textit{prompt} + LLM};
+          \node[b,fill=minegreen!12] (ans) at (1.4,-1) {resposta};
+          \draw[a] (c1)--(llm); \draw[a] (c2)--(llm); \draw[a] (c3)--(llm); \draw[a] (llm)--(ans);
+        \end{tikzpicture}
+        \par\scriptsize Simples, limitado pelo contexto.
         \column{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figs/map_reduce_method.png}
+        \textbf{Map-Reduce}\\[3pt]
+        \begin{tikzpicture}[scale=.7,font=\scriptsize,
+          b/.style={rectangle,draw,rounded corners,minimum width=1.05cm,minimum height=.45cm,align=center},
+          a/.style={-{Stealth},thick}]
+          \node[b,fill=mineblue!12] (c1) at (0,1.2) {$c_1$};
+          \node[b,fill=mineblue!12] (c2) at (1.5,1.2) {$c_2$};
+          \node[b,fill=mineblue!12] (c3) at (3,1.2) {$c_3$};
+          \node[b,fill=mineorange!14] (m1) at (0,.2) {map};
+          \node[b,fill=mineorange!14] (m2) at (1.5,.2) {map};
+          \node[b,fill=mineorange!14] (m3) at (3,.2) {map};
+          \node[b,fill=minered!12] (red) at (1.5,-.8) {reduzir};
+          \draw[a] (c1)--(m1); \draw[a] (c2)--(m2); \draw[a] (c3)--(m3);
+          \draw[a] (m1)--(red); \draw[a] (m2)--(red); \draw[a] (m3)--(red);
+        \end{tikzpicture}
+        \par\scriptsize Escala melhor, com mais chamadas ao modelo.
     \end{columns}
 \end{frame}
 
@@ -480,7 +559,7 @@
 
 \begin{frame}{Extração de Informação (IE)}
     \begin{block}{Definição}
-        \footnotesize Processo de identificar e estruturar automaticamente, a partir de texto não estruturado, palavras-chave, tópicos, entidades e relações --- transformando um acervo em conhecimento organizado.
+        \footnotesize Processo de identificar e estruturar automaticamente palavras-chave, tópicos, entidades e relações em texto não estruturado. O resultado transforma um acervo em conhecimento organizado.
     \end{block}
     \pause
     \begin{alertblock}{Complementar ao RAG}
@@ -514,7 +593,7 @@
     \pause
     \begin{itemize}\footnotesize
         \item \textbf{LDA} (Blei et al., 2003): tópicos como distribuições sobre palavras; documentos como mistura de tópicos.
-        \item \textbf{BERTopic} (Grootendorst, 2022): \textit{embeddings} + UMAP + HDBSCAN + c-TF-IDF. Supera LDA na maioria dos \textit{benchmarks}.
+        \item \textbf{BERTopic} (Grootendorst, 2022): \textit{embeddings} + UMAP + HDBSCAN + c-TF-IDF. Pode produzir tópicos mais interpretáveis em corpora semânticos, mas precisa ser avaliado no domínio.
     \end{itemize}
     \pause
     \begin{exampleblock}{Aplicação}
@@ -541,7 +620,7 @@
 
 \begin{frame}[shrink=5]{Extração de Relações e Grafos de Conhecimento}
     \begin{block}{NER e Relation Extraction (RE)}
-        \footnotesize \textbf{NER:} identifica entidades (algoritmos, \textit{datasets}, métricas). \textbf{RE:} conecta pares de entidades por relações (ex.\ \textit{Random Forest} ---utilizado-em--- \textit{predição de evasão escolar}).
+        \footnotesize \textbf{NER:} identifica entidades como algoritmos, \textit{datasets} e métricas. \textbf{RE:} conecta pares de entidades por relações, por exemplo, \textit{Random Forest} utilizado em predição de evasão escolar.
     \end{block}
     \pause
     \begin{columns}
@@ -551,7 +630,7 @@
         \end{block}
         \column{0.5\textwidth}
         \begin{block}{Abordagem via LLM}
-            \footnotesize Um \textit{prompt} retorna entidades/relações em JSON --- exige validação da saída.
+            \footnotesize Um \textit{prompt} pode retornar entidades e relações em JSON, mas a saída exige validação.
         \end{block}
     \end{columns}
     \pause
@@ -602,7 +681,40 @@
 \end{frame}
 
 % ==============================================================================
-\section{Estado da Arte (2023--2025)}
+\section{Qualidade, Segurança e Tendências}
+
+\begin{frame}{Segurança e Governança em RAG}
+    \begin{columns}
+      \column{.5\textwidth}
+      \begin{alertblock}{Riscos}
+        \footnotesize
+        \begin{itemize}
+          \item Documento malicioso pode tentar alterar instruções do LLM
+          \item Recuperar um trecho não autoriza expor dados pessoais ou sigilosos
+          \item Citação aumenta auditabilidade, mas não prova que a conclusão está correta
+        \end{itemize}
+      \end{alertblock}
+      \column{.5\textwidth}
+      \begin{block}{Controles}
+        \footnotesize
+        \begin{itemize}
+          \item Controle de acesso antes da recuperação
+          \item Separar instruções do sistema, consulta e documentos
+          \item Registrar fontes e avaliar respostas antes da implantação
+        \end{itemize}
+      \end{block}
+    \end{columns}
+    \reflexao{Se um estudante só pode ler parte do acervo, em qual etapa essa permissão deve ser aplicada?}
+\end{frame}
+
+\begin{frame}{Acesso responsável ao acervo}
+    \centering
+    \includegraphics[width=0.6\textwidth,height=0.40\textheight,keepaspectratio]{img/rag_acesso_controlado.png}
+    \captionof{figure}{Em um sistema RAG, a recuperação deve respeitar as permissões de acesso ao acervo.}
+    \reflexao{Por que é insuficiente verificar a permissão do usuário apenas depois que o documento já foi recuperado?}
+\end{frame}
+
+\subsection{Tendências de Pesquisa}
 % ==============================================================================
 
 \begin{frame}[shrink=5]{Estado da Arte: Self-RAG e Corrective RAG}
@@ -610,18 +722,18 @@
         \footnotesize Treina o modelo para emitir \textit{tokens} de reflexão que decidem quando recuperar, se os documentos são relevantes e se a resposta é sustentada pelo contexto.
     \end{block}
     \pause
-    \begin{block}{Corrective RAG --- CRAG (Yan et al., 2024)}
-        \footnotesize Avaliador de recuperação classifica documentos como corretos/ambíguos/incorretos; aciona busca complementar (web) quando a confiança é baixa.
+    \begin{block}{Corrective RAG (CRAG, Yan et al., 2024)}
+        \footnotesize Um avaliador classifica a qualidade dos documentos recuperados e pode disparar recuperação complementar quando a confiança é baixa.
     \end{block}
 \end{frame}
 
 \begin{frame}{Estado da Arte: GraphRAG e RAG Agêntico}
     \begin{block}{GraphRAG (Microsoft Research, 2024)}
-        \footnotesize Constrói grafo de entidades a partir dos documentos e sumariza por comunidades --- melhora perguntas multi-documento (\textit{multi-hop reasoning}).
+        \footnotesize Constrói um grafo de entidades a partir dos documentos e pode sumarizar comunidades. É útil para perguntas globais ou com múltiplos saltos, desde que a extração do grafo seja confiável.
     \end{block}
     \pause
     \begin{block}{RAG Agêntico (\textit{Agentic RAG})}
-        \footnotesize Agente planeja dinamicamente quantas vezes recuperar, quais fontes consultar e quando parar --- tendência dominante em produção desde 2024.
+        \footnotesize Um agente decide quantas recuperações executar, quais ferramentas consultar e quando encerrar. A flexibilidade vem acompanhada de mais custo, latência e necessidade de avaliação.
     \end{block}
     \vspace{0.2cm}
     \centering\tiny \faIcon{arrow-right}\ Material Didático e Colab trazem o pipeline completo do chatbot RAG
@@ -630,7 +742,7 @@
 % ==============================================================================
 % Referências
 % ==============================================================================
-\begin{frame}[shrink=5]{Referências Bibliográficas}
+\begin{frame}[shrink=11]{Referências Bibliográficas}
     \begin{thebibliography}{99}\footnotesize
         \bibitem{lewis} Lewis, P. et al. \textit{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. NeurIPS, 2020.
         \bibitem{gao} Gao, Y. et al. \textit{Retrieval-Augmented Generation for Large Language Models: A Survey}. arXiv:2312.10997, 2024.
