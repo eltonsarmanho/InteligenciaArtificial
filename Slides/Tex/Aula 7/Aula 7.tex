@@ -1,0 +1,647 @@
+\documentclass[aspectratio=169]{beamer}
+\setbeamerfont{headline}{size=\footnotesize}
+
+\mode<presentation>{
+    \usetheme{Montpellier}
+    \setbeamercovered{transparent}
+    \usecolortheme{beaver}
+}
+
+\usepackage[english,brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,shapes.multipart,
+                shapes,arrows,calc,trees}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{ragged2e}
+
+% --- Cores ---
+\definecolor{mineblue}{RGB}{0,90,180}
+\definecolor{mineorange}{RGB}{230,115,0}
+\definecolor{minegreen}{RGB}{34,139,34}
+\definecolor{minered}{RGB}{180,20,40}
+\definecolor{minegray}{RGB}{100,100,100}
+
+% --- Comandos auxiliares ---
+\newcommand{\reflexao}[1]{\begin{alertblock}{Reflexão}#1\end{alertblock}}
+\newcommand{\key}[1]{\underline{#1}}
+
+% --- Dados do Título ---
+\title[Mineração de Dados]{Mineração de Dados: Conceitos e Aplicações}
+\subtitle{Módulo 7: Aplicações}
+\author[Elton Sarmanho]{
+    Prof. Elton Sarmanho\inst{1}\\
+    \footnotesize \href{mailto:eltonss@ufpa.br}{eltonss@ufpa.br}
+}
+\institute[UFPA]{
+    \inst{1} Faculdade de Sistemas de Informação - UFPA Campus Cametá
+}
+\date{\today}
+
+% --- TikZ estilos ---
+\tikzstyle{block} = [rectangle,draw,fill=mineblue!20,text width=5em,
+                     text centered,rounded corners,minimum height=3em,
+                     font=\small]
+\tikzstyle{line}  = [draw,-latex']
+
+\begin{document}
+
+% ==============================================================================
+% Título
+% ==============================================================================
+\begin{frame}
+    \titlepage
+    \begin{center}
+        \tiny \faIcon{github}\ \href{https://github.com/eltonsarmanho}{github.com/eltonsarmanho} \quad
+        \faIcon{linkedin}\ \href{https://www.linkedin.com/in/elton-sarmanho-836553185/}{Elton Sarmanho}
+    \end{center}
+\end{frame}
+
+% Roteiro
+\begin{frame}[shrink=5]{Roteiro da Aula}
+    \tableofcontents[sections={1-3}]
+\end{frame}
+
+\begin{frame}[shrink=5]{Roteiro da Aula}
+   \tableofcontents[sections={4-9}]
+\end{frame}
+
+% ==============================================================================
+\section{Por que RAG?}
+% ==============================================================================
+
+\subsection{Limitações dos LLMs}
+
+\begin{frame}[shrink=5]{Limitações dos LLMs ``Puros''}
+    \begin{columns}
+        \column{0.55\textwidth}
+        \begin{alertblock}{Problemas}
+            \begin{itemize}\footnotesize
+                \item \textbf{Alucinação:} gera texto plausível, porém factualmente incorreto
+                \item \textbf{Conhecimento desatualizado:} \textit{knowledge cutoff} do treinamento
+                \item \textbf{Sem dados privados:} não conhece documentos internos, currículos, artigos específicos
+                \item \textbf{Falta de rastreabilidade:} não cita fontes verificáveis
+            \end{itemize}
+        \end{alertblock}
+        \column{0.45\textwidth}
+        \pause
+        \begin{block}{Analogia}
+            \footnotesize Um LLM ``puro'' é um estudante fazendo prova \textbf{de memória}.\\[4pt]
+            Um sistema RAG é um estudante fazendo prova \textbf{de consulta}: busca nas anotações antes de responder.
+        \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Retrieval-Augmented Generation (RAG)}
+    \begin{block}{Definição (Lewis et al., 2020)}
+        \footnotesize
+        Arquitetura que combina um mecanismo de \textbf{recuperação de informação} sobre uma base externa com um modelo de \textbf{geração de linguagem}, condicionando a resposta a evidências recuperadas dinamicamente.
+    \end{block}
+    \pause
+    \[
+      p(y \mid x) \approx \sum_{z \in \text{top-}k(p(\cdot\mid x))} p_{\eta}(z \mid x)\; p_{\theta}(y \mid x, z)
+    \]
+    \footnotesize $p_\eta$: modelo de recuperação (\textit{retriever}); $p_\theta$: modelo gerador (LLM); $z$: documentos recuperados.
+    \pause
+    \begin{alertblock}{}
+        \footnotesize RAG \textbf{não} substitui \textit{fine-tuning}: é preferível quando o conhecimento muda com frequência e é preciso citar fontes.
+    \end{alertblock}
+\end{frame}
+
+\subsection{Arquitetura e Paradigmas}
+
+\begin{frame}{Pipeline RAG: Visão Geral}
+    \begin{center}
+        \includegraphics[width=0.95\textwidth]{figs/rag.png}
+    \end{center}
+    \centering\footnotesize Carregamento $\to$ Divisão $\to$ Embedding $\to$ Banco Vetorial $\to$ Recuperação $\to$ Geração
+\end{frame}
+
+\begin{frame}[shrink=5]{Pipeline RAG: Diagrama Esquemático}
+    \centering
+    \begin{tikzpicture}[
+      box/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,
+                  minimum width=2.3cm,minimum height=1.0cm,align=center,font=\small},
+      arr/.style={-{Stealth[length=6pt]},mineblue,thick}
+    ]
+      \node[box] (doc)  at (0,0)    {\faIcon{file-alt}\\ Documentos};
+      \node[box] (split) at (2.9,0) {\faIcon{cut}\\ Chunks};
+      \node[box] (emb)  at (5.8,0)  {\faIcon{database}\\ Embeddings};
+      \node[box,fill=mineorange!12,draw=mineorange] (vec) at (8.7,0) {\faIcon{server}\\ Banco Vetorial};
+      \node[box,fill=minegreen!12,draw=minegreen] (ret) at (8.7,-2.0) {\faIcon{search}\\ Busca Semântica};
+      \node[box,fill=minered!12,draw=minered] (llm) at (5.8,-2.0)  {\faIcon{robot}\\ LLM Gerador};
+      \node[box] (ans) at (2.9,-2.0) {\faIcon{comment}\\ Resposta};
+      \node[box,dashed] (query) at (0,-2.0) {\faIcon{question}\\ Pergunta};
+      \draw[arr] (doc) -- (split);
+      \draw[arr] (split) -- (emb);
+      \draw[arr] (emb) -- (vec);
+      \draw[arr] (vec) -- (ret);
+      \draw[arr] (query) -- (ret);
+      \draw[arr] (ret) -- (llm);
+      \draw[arr] (llm) -- (ans);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Paradigmas de RAG (Gao et al., 2024)}
+    \begin{block}{Naive RAG}
+        \footnotesize Pipeline direto: indexar $\to$ recuperar $\to$ gerar. Simples, mas com baixa precisão e redundância.
+    \end{block}
+    \pause
+    \begin{block}{Advanced RAG}
+        \footnotesize Adiciona reescrita de consultas, \textit{re-ranking} e compressão de contexto antes/depois da recuperação.
+    \end{block}
+    \pause
+    \begin{block}{Modular RAG}
+        \footnotesize Arquitetura flexível com módulos intercambiáveis: roteamento, memória, busca híbrida, iteração múltipla.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Divisão dos Dados}
+% ==============================================================================
+
+\subsection{Carregamento de Documentos}
+
+\begin{frame}{Document Loading: Carregamento de Documentos}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Dados Estruturados}
+            \footnotesize Tabelas, planilhas, bancos relacionais, CSV/JSON --- já seguem um esquema definido.
+        \end{block}
+        \column{0.5\textwidth}
+        \begin{block}{Dados Não Estruturados}
+            \footnotesize PDFs, páginas web, áudio/vídeo, e-mails --- exigem \textit{parsers} especializados.
+        \end{block}
+    \end{columns}
+    \pause
+    \begin{alertblock}{Importante}
+        \footnotesize Preserve metadados (página, seção, autor, data) durante o carregamento --- são essenciais para citar a fonte na resposta final.
+    \end{alertblock}
+\end{frame}
+
+\subsection{Chunking}
+
+\begin{frame}{Por que Dividir Documentos em \textit{Chunks}?}
+    \begin{block}{Motivação}
+        \footnotesize Documentos completos excedem a janela de contexto do LLM e diluem a relevância semântica de um único \textit{embedding}.
+    \end{block}
+    \pause
+    \begin{exampleblock}{Divisão Mal Feita}
+        \footnotesize \textit{``O novo modelo da Renault é o Duster, possui 110 cavalos...''} dividido ingenuamente em:
+        \begin{itemize}\footnotesize
+            \item \texttt{"O novo modelo da Renault é"}
+            \item \texttt{"o Duster, possui 110"}
+            \item \texttt{"cavalos de potência..."}
+        \end{itemize}
+        Nenhum fragmento isolado responde ``Qual o preço do Duster?''
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{\texttt{chunk\_size} e \texttt{chunk\_overlap}}
+    \begin{columns}
+        \column{0.55\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/chunk_overlap.png}
+        \column{0.45\textwidth}
+        \begin{itemize}\footnotesize
+            \item \textbf{chunk\_size:} tamanho do fragmento (caracteres/\textit{tokens})
+            \item \textbf{chunk\_overlap:} sobreposição entre fragmentos consecutivos, evita cortar informação na fronteira
+        \end{itemize}
+        \pause
+        \begin{alertblock}{}
+            \footnotesize Pequeno $\Rightarrow$ mais preciso, menos contexto.\\
+            Grande $\Rightarrow$ mais contexto, menos preciso.
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Estratégias de Divisão de Texto}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{2.6cm}p{5.8cm}p{2.6cm}}
+    \toprule
+    Estratégia & Funcionamento & Uso \\
+    \midrule
+    Fixed-size & Corta a cada $N$ caracteres, sem estrutura semântica & Textos simples \\
+    Recursivo & Respeita hierarquia (parágrafo $\to$ linha $\to$ frase) & Padrão recomendado \\
+    Estrutural & Usa sintaxe do formato (Markdown/HTML/código) & Doc.\ técnica, código \\
+    Semântico & Agrupa sentenças por similaridade de \textit{embedding} & Textos longos e heterogêneos \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+    \pause
+    \begin{alertblock}{Boas Práticas}
+        \footnotesize \texttt{chunk\_size} $\in [300, 1000]$ caracteres; \texttt{chunk\_overlap} $\approx$ 10--20\% do \texttt{chunk\_size}. Sempre preserve metadados por \textit{chunk}.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+\section{Embeddings}
+% ==============================================================================
+
+\subsection{Representação Vetorial Semântica}
+
+\begin{frame}{O que é um Embedding?}
+    \begin{block}{Definição}
+        \footnotesize Representação vetorial densa $\mathbf{v} \in \mathbb{R}^d$ de um texto, onde proximidade \textbf{geométrica} reflete proximidade \textbf{semântica}.
+    \end{block}
+    \pause
+    \begin{exampleblock}{Exemplo}
+        \footnotesize ``desistência de estudantes'' e ``evasão escolar'' $\to$ vetores próximos, mesmo sem palavras em comum.
+    \end{exampleblock}
+    \pause
+    \begin{alertblock}{Por que importa para RAG?}
+        \footnotesize Permite superar a busca por palavra-chave: recupera por \textbf{significado}, não por correspondência literal.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=5]{Evolução: de TF-IDF a Embeddings Contextuais}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{3.2cm}p{7.6cm}}
+    \toprule
+    Geração & Características \\
+    \midrule
+    TF-IDF & Vetores esparsos por frequência; sem sinônimos \\
+    Word2Vec/GloVe (2013--14) & Vetores densos estáticos por palavra \\
+    BERT (2018) & Vetores contextuais (dependem da frase) \\
+    Sentence-BERT/OpenAI/Gemini (2019+) & Um vetor por frase/parágrafo, otimizado p/ similaridade \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Similaridade de Cosseno}
+    \begin{block}{Fórmula}
+        \[
+          \text{sim}_{\cos}(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|\,\|\mathbf{v}\|} \in [-1, 1]
+        \]
+    \end{block}
+    \pause
+    \begin{alertblock}{Vetores normalizados}
+        \footnotesize Quando $\|\mathbf{u}\|=\|\mathbf{v}\|=1$, a similaridade de cosseno reduz-se ao produto escalar $\mathbf{u}\cdot\mathbf{v}$ --- explorado para acelerar buscas em larga escala.
+    \end{alertblock}
+    \pause
+    \begin{exampleblock}{}
+        \footnotesize $\text{sim}(\text{``gosto de cachorros''}, \text{``gosto de animais''}) \gg \text{sim}(\text{``gosto de cachorros''}, \text{``tempo está ruim''})$
+    \end{exampleblock}
+\end{frame}
+
+\subsection{Modelos de Embedding}
+
+\begin{frame}[shrink=5]{Modelos de Embedding Disponíveis}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{3.0cm}p{2.6cm}p{5.2cm}}
+    \toprule
+    Modelo & Provedor & Observação \\
+    \midrule
+    text-embedding-3-large & OpenAI & Alta precisão, dimensão configurável, pago \\
+    Gemini Embedding & Google & Multimodal (texto/imagem/áudio/vídeo/PDF) \\
+    BGE-M3 / Jina & BAAI / Jina AI & Abertos, executáveis localmente \\
+    E5 / GTE & Microsoft / Alibaba & \textit{Baseline} amplamente usado \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+    \pause
+    \begin{alertblock}{MTEB --- Massive Text Embedding Benchmark}
+        \footnotesize Principal \textit{benchmark} público para comparar modelos de \textit{embedding}. Consulte o \textit{leaderboard} antes de escolher --- o mercado evolui rapidamente.
+    \end{alertblock}
+    \begin{block}{}
+        \footnotesize \faIcon{exclamation-triangle}\ O mesmo modelo usado para indexar documentos deve ser usado para a consulta.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Banco de Dados Vetorial}
+% ==============================================================================
+
+\begin{frame}{Banco de Dados Vetorial (Vector Store)}
+    \begin{block}{Definição}
+        \footnotesize Sistema especializado em indexar e consultar eficientemente grandes coleções de vetores, retornando os $k$ mais próximos (k-NN) de uma consulta.
+    \end{block}
+    \pause
+    \begin{alertblock}{O Problema da Escala}
+        \footnotesize Busca exata k-NN: $O(n \cdot d)$ --- inviável para milhões de documentos. Solução: \textbf{ANN} (\textit{Approximate Nearest Neighbors}).
+    \end{alertblock}
+    \pause
+    \begin{itemize}\footnotesize
+        \item \textbf{HNSW:} grafo hierárquico de vizinhança (Malkov \& Yashunin, 2018) --- padrão em produção
+        \item \textbf{IVF:} particiona o espaço em \textit{clusters} (K-Means)
+        \item \textbf{PQ:} comprime vetores, reduz uso de memória
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=5]{Comparação de Soluções}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{2.0cm}p{3.0cm}p{2.8cm}p{3.4cm}}
+    \toprule
+    Solução & Escala Ideal & Persistência & Observação \\
+    \midrule
+    Chroma & $\sim$100 mil docs & Automática & Simples, ótima p/ prototipagem \\
+    FAISS & Milhões de vetores & Manual & Rápida, embarcada (Meta AI) \\
+    Pinecone/Weaviate/Milvus & Produção larga escala & Gerenciada & Multi-tenant, alta disponibilidade \\
+    pgvector & Integra c/ dados relacionais & Nativa PostgreSQL & Combina busca vetorial + SQL \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+    \pause
+    \begin{alertblock}{Recomendação}
+        \footnotesize Ensino/protótipos: \textbf{Chroma} ou \textbf{FAISS}. Produção com múltiplos usuários: soluções gerenciadas ou \textbf{pgvector}.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+\section{Busca Semântica e Recuperação}
+% ==============================================================================
+
+\subsection{Semantic Search e MMR}
+
+\begin{frame}{Busca Semântica (\textit{Semantic Search})}
+    \begin{block}{Definição}
+        \footnotesize Recupera os $k$ documentos com maior similaridade de cosseno ao \textit{embedding} da consulta --- por \textbf{significado}, não por palavra-chave.
+    \end{block}
+    \pause
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Vantagens}
+            \footnotesize\begin{itemize}\item Simples \item Baixo custo \item Ótima p/ perguntas factuais\end{itemize}
+        \end{block}
+        \column{0.5\textwidth}
+        \begin{alertblock}{Limitações}
+            \footnotesize\begin{itemize}\item Pode retornar documentos redundantes \item Sem garantia de diversidade\end{itemize}
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{MMR --- Maximal Marginal Relevance}
+    \begin{block}{Fórmula (Carbonell \& Goldstein, 1998)}
+        \footnotesize
+        \[
+          \text{MMR} = \arg\max_{D_i \in R \setminus S} \Big[ \lambda \cdot \text{sim}(D_i, Q) - (1-\lambda) \cdot \max_{D_j \in S} \text{sim}(D_i, D_j) \Big]
+        \]
+    \end{block}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/mmr_diversidade.png}
+        \column{0.5\textwidth}
+        \footnotesize $\lambda \to 1$: prioriza relevância.\\
+        $\lambda \to 0$: prioriza diversidade.
+        \pause
+        \begin{alertblock}{Quando usar}
+            \footnotesize Semantic Search: perguntas factuais.\\
+            MMR: perguntas exploratórias, evita redundância.
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Busca Híbrida}
+    \begin{block}{Densa + Esparsa}
+        \footnotesize Combina recuperação por \textit{embeddings} (densa) com BM25/TF-IDF (esparsa, lexical), somando \textit{scores} ou aplicando \textit{re-ranking}.
+    \end{block}
+    \pause
+    \begin{alertblock}{Quando usar}
+        \footnotesize Consultas com termos técnicos exatos (siglas, códigos, nomes próprios) que a busca semântica pura pode não priorizar.
+    \end{alertblock}
+\end{frame}
+
+\subsection{Combinando Contexto com o LLM}
+
+\begin{frame}{Pipeline RetrievalQA}
+    \centering
+    \includegraphics[width=0.55\textwidth]{figs/retrievalqa_pipeline.png}
+    \begin{block}{}
+        \centering\footnotesize Pergunta $\to$ consulta ao banco vetorial $\to$ fragmentos relevantes $\to$ LLM $\to$ resposta.
+    \end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Estratégias de Combinação: Stuff, Map-Reduce, Refine}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{2.0cm}p{6.6cm}p{2.8cm}}
+    \toprule
+    Estratégia & Funcionamento & Compromisso \\
+    \midrule
+    Stuff & Concatena todos os fragmentos em um único \textit{prompt} & Simples, limitada pela janela de contexto \\
+    Map-Reduce & Resposta parcial por fragmento, depois combina & Escala, mais custo/latência \\
+    Refine & Refina resposta iterativamente a cada fragmento & Mais contexto, sequencial e lenta \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Stuff vs.\ Map-Reduce: Diagramas}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/stuff_method.png}
+        \column{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/map_reduce_method.png}
+    \end{columns}
+\end{frame}
+
+% ==============================================================================
+\section{Avaliação de Sistemas RAG}
+% ==============================================================================
+
+\begin{frame}[shrink=5]{RAGAS: Métricas de Avaliação}
+    \begin{alertblock}{Duas Frentes de Falha}
+        \footnotesize Um RAG pode falhar na \textbf{recuperação} (documentos errados) ou na \textbf{geração} (resposta mal formulada mesmo com contexto correto).
+    \end{alertblock}
+    \pause
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{2.8cm}p{8.2cm}}
+    \toprule
+    Métrica & Definição \\
+    \midrule
+    Context Precision & Proporção do contexto recuperado que é relevante (retriever) \\
+    Context Recall & Proporção da informação necessária que foi recuperada (retriever) \\
+    Faithfulness & Afirmações da resposta sustentadas pelo contexto (gerador) \\
+    Answer Relevancy & O quanto a resposta aborda a pergunta (gerador) \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+    \pause
+    \begin{block}{Diagnóstico}
+        \footnotesize Precision/Recall baixos $\to$ ajustar \textit{chunking}/\textit{embedding}/busca. Faithfulness baixa $\to$ problema no LLM/\textit{prompt}.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Extração de Dados}
+% ==============================================================================
+
+\subsection{Palavras-chave e Tópicos}
+
+\begin{frame}{Extração de Informação (IE)}
+    \begin{block}{Definição}
+        \footnotesize Processo de identificar e estruturar automaticamente, a partir de texto não estruturado, palavras-chave, tópicos, entidades e relações --- transformando um acervo em conhecimento organizado.
+    \end{block}
+    \pause
+    \begin{alertblock}{Complementar ao RAG}
+        \footnotesize Extração ajuda a \textbf{compreender} o acervo como um todo; RAG ajuda a \textbf{responder perguntas pontuais} sobre ele.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=5]{Extração de Palavras-chave (\textit{Keyword Extraction})}
+    \begin{center}\footnotesize
+    \begin{tabular}{>{\bfseries}p{2.2cm}p{7.0cm}p{2.4cm}}
+    \toprule
+    Método & Funcionamento & Característica \\
+    \midrule
+    TF-IDF & Frequência no doc.\ penalizada pelo corpus & \textit{Baseline} estatístico \\
+    RAKE (2010) & Grafo de co-ocorrência de palavras & Rápido, sem treino \\
+    YAKE (2020) & Estatísticas posicionais e de contexto & Independe de idioma/corpus \\
+    KeyBERT (2020) & Similaridade de \textit{embedding} (BERT) & Relevância semântica \\
+    \bottomrule
+    \end{tabular}
+    \end{center}
+    \pause
+    \begin{block}{Qual usar?}
+        \footnotesize Triagem rápida: RAKE/YAKE. Relevância semântica (reaproveitando o \textit{embedding} do RAG): KeyBERT.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Modelagem de Tópicos (\textit{Topic Modeling})}
+    \begin{block}{Definição}
+        \footnotesize Descobre, de forma não supervisionada, os temas latentes de uma coleção de $N$ documentos.
+    \end{block}
+    \pause
+    \begin{itemize}\footnotesize
+        \item \textbf{LDA} (Blei et al., 2003): tópicos como distribuições sobre palavras; documentos como mistura de tópicos.
+        \item \textbf{BERTopic} (Grootendorst, 2022): \textit{embeddings} + UMAP + HDBSCAN + c-TF-IDF. Supera LDA na maioria dos \textit{benchmarks}.
+    \end{itemize}
+    \pause
+    \begin{exampleblock}{Aplicação}
+        \footnotesize ``Quais subtemas aparecem nos $N$ artigos sobre evasão escolar? (fatores socioeconômicos, algoritmos preditivos, EAD, avaliação de modelos...)''
+    \end{exampleblock}
+\end{frame}
+
+\subsection{Tendências e Relações}
+
+\begin{frame}{Análise de Tendências (\textit{Trend Analysis})}
+    \begin{block}{Combinando Tópicos + Metadados Temporais}
+        \begin{enumerate}\footnotesize
+            \item Extrair tópico dominante de cada documento
+            \item Agrupar documentos por ano de publicação
+            \item Calcular frequência relativa do tópico por período
+            \item Plotar série temporal: tópicos emergentes vs.\ em declínio
+        \end{enumerate}
+    \end{block}
+    \pause
+    \begin{alertblock}{Atenção}
+        \footnotesize Tendência relevante = frequência crescente \textbf{+} relevância sustentada, não apenas contagem pontual.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=5]{Extração de Relações e Grafos de Conhecimento}
+    \begin{block}{NER e Relation Extraction (RE)}
+        \footnotesize \textbf{NER:} identifica entidades (algoritmos, \textit{datasets}, métricas). \textbf{RE:} conecta pares de entidades por relações (ex.\ \textit{Random Forest} ---utilizado-em--- \textit{predição de evasão escolar}).
+    \end{block}
+    \pause
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Abordagem Clássica}
+            \footnotesize Pipeline NER (spaCy) + classificador de relações.
+        \end{block}
+        \column{0.5\textwidth}
+        \begin{block}{Abordagem via LLM}
+            \footnotesize Um \textit{prompt} retorna entidades/relações em JSON --- exige validação da saída.
+        \end{block}
+    \end{columns}
+    \pause
+    \begin{alertblock}{}
+        \footnotesize \faIcon{exclamation-triangle}\ Entidades/relações extraídas por LLM também podem ser alucinadas. Valide contra o texto de origem. O grafo resultante é o insumo do \textbf{GraphRAG}.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+\section{Estudo de Caso: Chatbot RAG}
+% ==============================================================================
+
+\begin{frame}[shrink=5]{Chatbot RAG sobre um Acervo de Artigos Científicos}
+    \centering
+    \begin{tikzpicture}[
+      box/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,
+                  minimum width=2.7cm,minimum height=0.95cm,align=center,font=\footnotesize},
+      arr/.style={-{Stealth[length=6pt]},mineblue,thick}
+    ]
+      \node[box] (pdfs) at (0,0) {\faIcon{file-pdf}\\ Artigos (PDF)};
+      \node[box] (chunks) at (3.1,0) {\faIcon{cut}\\ Chunking};
+      \node[box] (emb) at (6.2,0) {\faIcon{database}\\ Embeddings};
+      \node[box,fill=mineorange!12,draw=mineorange] (store) at (6.2,-1.6) {\faIcon{server}\\ Chroma/FAISS};
+      \node[box,fill=minegreen!12,draw=minegreen] (mmr) at (3.1,-1.6) {\faIcon{search}\\ Retriever};
+      \node[box,fill=minered!12,draw=minered] (chat) at (0,-1.6) {\faIcon{comments}\\ Chatbot};
+      \draw[arr] (pdfs) -- (chunks);
+      \draw[arr] (chunks) -- (emb);
+      \draw[arr] (emb) -- (store);
+      \draw[arr] (store) -- (mmr);
+      \draw[arr] (mmr) -- (chat);
+    \end{tikzpicture}
+    \pause
+    \begin{block}{Etapas (implementadas no Colab)}
+        \footnotesize 1. Carregamento $\to$ 2. Extração exploratória (palavras-chave/tópicos) $\to$ 3. Chunking $\to$ 4. Embedding + Indexação $\to$ 5. Retriever (semântico/MMR) $\to$ 6. RetrievalQA $\to$ 7. Interface conversacional $\to$ 8. Avaliação (RAGAS)
+    \end{block}
+\end{frame}
+
+\begin{frame}{Limitações a Considerar no Projeto}
+    \begin{alertblock}{}
+        \begin{itemize}\footnotesize
+            \item O chatbot só responde bem sobre o que está no acervo indexado
+            \item Perguntas multi-documento podem exigir Map-Reduce ou GraphRAG
+            \item \texttt{chunk\_size} e $k$ do \textit{retriever} são hiperparâmetros a ajustar empiricamente
+        \end{itemize}
+    \end{alertblock}
+    \vspace{0.3cm}
+    \centering\footnotesize \faIcon{arrow-right}\ Implementação completa e código no notebook Colab deste módulo.
+\end{frame}
+
+% ==============================================================================
+\section{Estado da Arte (2023--2025)}
+% ==============================================================================
+
+\begin{frame}[shrink=5]{Estado da Arte: Self-RAG e Corrective RAG}
+    \begin{block}{Self-RAG (Asai et al., 2023)}
+        \footnotesize Treina o modelo para emitir \textit{tokens} de reflexão que decidem quando recuperar, se os documentos são relevantes e se a resposta é sustentada pelo contexto.
+    \end{block}
+    \pause
+    \begin{block}{Corrective RAG --- CRAG (Yan et al., 2024)}
+        \footnotesize Avaliador de recuperação classifica documentos como corretos/ambíguos/incorretos; aciona busca complementar (web) quando a confiança é baixa.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Estado da Arte: GraphRAG e RAG Agêntico}
+    \begin{block}{GraphRAG (Microsoft Research, 2024)}
+        \footnotesize Constrói grafo de entidades a partir dos documentos e sumariza por comunidades --- melhora perguntas multi-documento (\textit{multi-hop reasoning}).
+    \end{block}
+    \pause
+    \begin{block}{RAG Agêntico (\textit{Agentic RAG})}
+        \footnotesize Agente planeja dinamicamente quantas vezes recuperar, quais fontes consultar e quando parar --- tendência dominante em produção desde 2024.
+    \end{block}
+    \vspace{0.2cm}
+    \centering\tiny \faIcon{arrow-right}\ Material Didático e Colab trazem o pipeline completo do chatbot RAG
+\end{frame}
+
+% ==============================================================================
+% Referências
+% ==============================================================================
+\begin{frame}[shrink=5]{Referências Bibliográficas}
+    \begin{thebibliography}{99}\footnotesize
+        \bibitem{lewis} Lewis, P. et al. \textit{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. NeurIPS, 2020.
+        \bibitem{gao} Gao, Y. et al. \textit{Retrieval-Augmented Generation for Large Language Models: A Survey}. arXiv:2312.10997, 2024.
+        \bibitem{asai} Asai, A. et al. \textit{Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection}. arXiv:2310.11511, 2023.
+        \bibitem{yan} Yan, S.-Q. et al. \textit{Corrective Retrieval Augmented Generation}. arXiv:2401.15884, 2024.
+        \bibitem{edge} Edge, D. et al. \textit{From Local to Global: A Graph RAG Approach}. Microsoft Research, arXiv:2404.16130, 2024.
+        \bibitem{carbonell} Carbonell, J.; Goldstein, J. \textit{The Use of MMR, Diversity-Based Reranking}. SIGIR, 1998.
+        \bibitem{blei} Blei, D. M. et al. \textit{Latent Dirichlet Allocation}. JMLR, 2003.
+        \bibitem{grootendorst} Grootendorst, M. \textit{BERTopic: Neural Topic Modeling with a Class-based TF-IDF Procedure}. arXiv:2203.05794, 2022.
+        \bibitem{material} \textbf{Material Didático Módulo 7} e Notebook Colab disponíveis no repositório da disciplina.
+    \end{thebibliography}
+\end{frame}
+
+\end{document}
