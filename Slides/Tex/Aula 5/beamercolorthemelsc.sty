@@ -1,0 +1,48 @@
+\ProvidesPackageRCS $Header: /cvsroot/latex-beamer/latex-beamer/themes/color/beamercolorthemelsc.sty,v 1.7 2004/10/07 22:21:16 tantau Exp $
+
+% Copyright 2003 by Till Tantau <tantau@users.sourceforge.net>.
+%
+% This program can be redistributed and/or modified under the terms
+% Azul Claro UFPA: RGB : 1, 146, 222
+% Azul Escuro UFPA: 40, 22, 110
+% Vermelho UFPA: 219, 36, 25
+% of the GNU Public License, version 2.
+
+\mode<presentation>
+
+\definecolor{lscgreen}{RGB}{ 220, 220 ,220}
+\definecolor{lscText}{RGB}{1, 146, 225}
+\definecolor{lscgreenFonte}{RGB}{219, 36, 25}
+
+\definecolor{lscblue}{RGB}{0	,102	,153}
+
+\definecolor{lscwhite}{RGB}{255,255,255}
+%Sumário ou Roteiro 
+\setbeamercolor{structure}{fg=lscgreenFonte}
+
+\setbeamercolor{palette primary}{fg=lscText,bg=lscgreen!70}
+\setbeamercolor{palette secondary}{fg=lscText,bg=lscgreen!80}
+\setbeamercolor{palette tertiary}{fg=lscText,bg=lscgreen!90}
+\setbeamercolor{palette quaternary}{fg=lscwhite,bg=lscblue}
+
+\setbeamercolor{titlelike}{parent=palette quaternary}
+
+\setbeamercolor{block title}{fg=lscwhite,bg=lscText}
+\setbeamercolor{block title alerted}{use=alerted text,fg=black,bg=alerted text.fg!25!bg}
+\setbeamercolor{block title example}{use=example text,fg=black,bg=example text.fg!15!bg}
+
+\setbeamercolor{block body}{parent=normal text,use=block title,bg=block title.bg!25!bg}
+\setbeamercolor{block body alerted}{parent=normal text,use=block title alerted,bg=block title alerted.bg!25!bg}
+\setbeamercolor{block body example}{parent=normal text,use=block title example,bg=block title example.bg!25!bg}
+
+  
+\setbeamercolor{palette sidebar primary}{fg=lscwhite}
+\setbeamercolor{palette sidebar secondary}{fg=lscwhite!75}
+\setbeamercolor{palette sidebar tertiary}{fg=lscwhite!75}
+\setbeamercolor{palette sidebar quaternary}{fg=lscwhite}
+
+\setbeamercolor*{separation line}{}
+\setbeamercolor*{fine separation line}{}
+
+\mode
+<all>
