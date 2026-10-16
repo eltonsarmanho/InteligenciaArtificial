@@ -1,0 +1,727 @@
+\documentclass[aspectratio=169]{beamer}
+\setbeamerfont{headline}{size=\footnotesize}
+
+\mode<presentation>{
+    \usetheme{Montpellier}
+    \setbeamercovered{transparent}
+    \usecolortheme{beaver}
+}
+
+\usepackage[english,brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fontawesome}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,backgrounds,calc,mindmap,trees,patterns,decorations.text,shapes,arrows,shadows.blur}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{ragged2e}
+
+% Colors
+\definecolor{mineblue}{RGB}{0,90,180}
+\definecolor{mineorange}{RGB}{230,115,0}
+\definecolor{minegreen}{RGB}{34,139,34}
+\definecolor{minered}{RGB}{180,20,40}
+\definecolor{minegray}{RGB}{100,100,100}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\newcommand{\reflexao}[1]{\begin{alertblock}{Reflexão}#1\end{alertblock}}
+\newcommand{\key}[1]{\underline{#1}}
+
+% Title data
+\title[Mineração de Dados]{Introdução à Mineração de Dados e KDD}
+\subtitle{Módulo 1}
+\author[Elton Sarmanho]{
+    Prof. Elton Sarmanho\inst{1}\\
+    \footnotesize \href{mailto:eltonss@ufpa.br}{eltonss@ufpa.br}
+}
+\institute[UFPA]{
+    \inst{1} Faculdade de Sistemas de Informação -- UFPA Campus Cametá
+}
+\date{\today}
+
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, text width=5em, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+
+\begin{document}
+
+% ============================================================
+% Slide 1: Título
+% ============================================================
+\begin{frame}
+    \titlepage
+    \begin{center}
+        \tiny \faGithub\ \href{https://github.com/eltonsarmanho}{github.com/eltonsarmanho} \quad
+        \faLinkedinSquare\ \href{https://www.linkedin.com/in/elton-sarmanho-836553185/}{Elton Sarmanho}
+    \end{center}
+\end{frame}
+
+% ============================================================
+% Slide 2: Objetivos de Aprendizagem
+% ============================================================
+\begin{frame}{Objetivos de Aprendizagem}
+    \begin{itemize}
+        \item \faCheckCircle\ \textbf{Compreender} o conceito formal de Mineração de Dados e sua distinção em relação a BI, Estatística e ML
+        \item \faCheckCircle\ \textbf{Distinguir} os tipos de tarefas: classificação, regressão, agrupamento, associação, anomalias e sumarização
+        \item \faCheckCircle\ \textbf{Aplicar} o processo KDD e a metodologia CRISP-DM a problemas reais
+        \item \faCheckCircle\ \textbf{Analisar} a relação entre Mineração de Dados e Estatística, IA, BD e Reconhecimento de Padrões
+        \item \faCheckCircle\ \textbf{Construir} pipelines básicos com Python (Pandas, Scikit-learn, Matplotlib)
+        \item \faCheckCircle\ \textbf{Avaliar} criticamente o uso de DM sob perspectivas éticas, considerando viés e a LGPD
+        \item \faCheckCircle\ \textbf{Relacionar} o contexto histórico com o estado da arte atual (AutoML, XAI, LLMs)
+        \item \faCheckCircle\ \textbf{Identificar} as ferramentas especializadas para mineração de dados (WEKA, KNIME, Orange, H2O.ai)
+    \end{itemize}
+\end{frame}
+
+% ============================================================
+% Slide 3: Roteiro
+% ============================================================
+\begin{frame}{Roteiro}
+    \tableofcontents
+\end{frame}
+
+% ==============================================================================
+\section{O que é Mineração de Dados}
+% ==============================================================================
+
+\begin{frame}{Definição Formal}
+    \begin{block}{Definição Clássica (Fayyad et al., 1996)}
+        Mineração de Dados é a extração de informação \textbf{implícita},
+        \textbf{previamente desconhecida} e \textbf{potencialmente útil}
+        a partir de dados armazenados em grandes bases de dados.
+    \end{block}
+
+    \vspace{0.3cm}
+    \begin{block}{\faSearch\ Implícita}
+        Não diretamente observável: requer \textbf{inferência e busca} — o padrão não aparece na simples leitura dos dados.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{block}{\faLightbulbO\ Previamente Desconhecida}
+        Novo conhecimento: \textbf{não} se trata de confirmar hipóteses já sabidas, mas de descobrir relações inesperadas.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{block}{\faCogs\ Potencialmente Útil}
+        Valor prático ou teórico, passível de ação ou refinamento do entendimento do domínio.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% Slide: Pirâmide Dados → Conhecimento
+% ============================================================
+\begin{frame}{Da Pirâmide de Dados ao Conhecimento}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.82]
+        % Camada 4 (base): DADOS
+        \fill[mineblue!20,draw=mineblue,thick]
+            (-4.2,-2.2) -- (4.2,-2.2) -- (3.2,-0.5) -- (-3.2,-0.5) -- cycle;
+        \node[font=\small\bfseries\color{mineblue}] at (0,-1.35) {DADOS};
+        \node[font=\tiny\color{minegray},right] at (4.4,-1.35) {Fatos brutos, não interpretados};
+
+        % Camada 3: INFORMAÇÃO
+        \fill[mineorange!20,draw=mineorange,thick]
+            (-3.2,-0.5) -- (3.2,-0.5) -- (2.2,1.1) -- (-2.2,1.1) -- cycle;
+        \node[font=\small\bfseries\color{mineorange}] at (0,0.30) {INFORMAÇÃO};
+        \node[font=\tiny\color{minegray},right] at (3.4,0.30) {Dados com contexto e significado};
+
+        % Camada 2: CONHECIMENTO
+        \fill[minegreen!20,draw=minegreen,thick]
+            (-2.2,1.1) -- (2.2,1.1) -- (1.2,2.7) -- (-1.2,2.7) -- cycle;
+        \node[font=\footnotesize\bfseries\color{minegreen}] at (0,1.90) {CONHECIMENTO};
+        \node[font=\tiny\color{minegray},right] at (2.4,1.90) {Padrões + experiência acumulada};
+
+        % Camada 1 (topo): SABEDORIA
+        \fill[minered!20,draw=minered,thick]
+            (-1.2,2.7) -- (1.2,2.7) -- (0,4.1) -- cycle;
+        \node[font=\tiny\bfseries\color{minered}] at (0,3.2) {SABEDORIA};
+        \node[font=\tiny\color{minegray},right] at (1.4,3.2) {Aplicação estratégica};
+
+        % Eixo de abstração
+        \draw[->,thick,minegray] (-4.5,-2.2) -- (-4.5,4.1)
+            node[font=\tiny,midway,rotate=45,left] at (4.4,-1.35)  {Abstração crescente};
+
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.05cm}
+    \begin{center}
+        \small\textit{A Mineração de Dados transforma automaticamente \textbf{Dados} em \textbf{Conhecimento} acionável.}
+    \end{center}
+\end{frame}
+
+% ============================================================
+% Slide: Exemplos Práticos
+% ============================================================
+\begin{frame}{Exemplos Práticos de Mineração de Dados}
+    \footnotesize
+    \begin{block}{\faFilm\ Netflix com Filtragem Colaborativa}
+        Algoritmos recomendam filmes e séries com base no histórico de visualizações, reduzindo o custo de retenção de assinantes.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\faCreditCard\ Detecção de Fraude Financeira}
+        Visa e Mastercard identificam transações suspeitas em tempo real, prevenindo bilhões de dólares em perdas anuais.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\faHeartbeat\ Medicina Preditiva}
+        Modelos auxiliam no diagnóstico precoce de câncer e diabetes a partir de exames de imagem e histórico clínico.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{alertblock}{\faShoppingCart\ Regra de Associação Clássica}
+        ``Clientes que compram fraldas às sextas-feiras também tendem a comprar cerveja.'' $\rightarrow$ padrão inesperado e valiosa para posicionamento de prateleiras.
+    \end{alertblock}
+\end{frame}
+
+% ============================================================
+% Slide: Distinção entre Conceitos
+% ============================================================
+\begin{frame}{Distinção entre Conceitos Relacionados}
+    \scriptsize
+    \begin{tabular}{>{\bfseries\color{mineblue}}p{2.6cm} p{2.8cm} p{2.4cm} p{3.4cm}}
+        \hline
+        \rowcolor{mineblue!15}
+        \textbf{Conceito} & \textbf{Foco Principal} & \textbf{Orientação} & \textbf{Exemplo de Uso} \\
+        \hline
+        Business Intelligence & Relatórios e dashboards & Dados históricos & KPIs mensais de vendas \\
+        \hline
+        OLAP & Análise multidimensional & Dados agregados & Cubo de vendas por região e período \\
+        \hline
+        Estatística Clássica & Inferência e testes de hipótese & Amostras pequenas & Teste A/B de interface web \\
+        \hline
+        Machine Learning & Aprendizado a partir de dados & Preditivo e adaptativo & Classificação de spam \\
+        \hline
+        \textcolor{minered}{Mineração de Dados} & \textcolor{minered}{Descoberta de padrões em grandes volumes} & \textcolor{minered}{Exploratório e preditivo} & \textcolor{minered}{Detecção de fraude em cartões} \\
+        \hline
+        Big Data & Processamento de volumes massivos & Infraestrutura e escala & Análise de logs em tempo real \\
+        \hline
+    \end{tabular}
+    \vspace{0.25cm}
+    \begin{alertblock}{}
+        \tiny A Mineração de Dados destaca-se por seu foco \textbf{exploratório}: busca padrões \textit{sem hipótese prévia}, em grandes volumes, combinando aspectos de ML, Estatística e BD.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+\section{Evolução Histórica}
+% ==============================================================================
+
+\begin{frame}{Linha do Tempo da Mineração de Dados}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.65,
+        event/.style={circle,fill=mineblue,text=white,font=\tiny\bfseries,minimum size=0.75cm},
+        label/.style={text width=2.3cm,align=center,font=\tiny}]
+    \draw[->,thick,mineblue] (0,0) -- (14,0) node[right]{\small Tempo};
+
+    \node[event] (e1) at (1,0) {60s};
+    \node[label,above=0.15cm of e1] {Bancos de\\Dados\\Relacionais};
+
+    \node[event] (e2) at (3,0) {70s};
+    \node[label,below=0.15cm of e2] {Sistemas\\Especialistas\\(IA Clássica)};
+
+    \node[event] (e3) at (5,0) {80s};
+    \node[label,above=0.15cm of e3] {Machine\\Learning\\e Redes Neurais};
+
+    \node[event] (e4) at (7,0) {90s};
+    \node[label,below=0.15cm of e4] {KDD e\\Data Mining\\(Fayyad, 1996)};
+
+    \node[event] (e5) at (9,0) {2000s};
+    \node[label,above=0.15cm of e5] {Web Mining\\e Text\\Mining};
+
+    \node[event] (e6) at (11,0) {2010s};
+    \node[label,below=0.15cm of e6] {Big Data\\e Deep\\Learning};
+
+    \node[event] (e7) at (13,0) {2020s};
+    \node[label,above=0.15cm of e7] {AutoML,\\LLMs e\\IA Generativa};
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+% ==============================================================================
+\section{Processo KDD}
+% ==============================================================================
+
+\begin{frame}{Visão Geral}
+    \begin{center}
+    \begin{tikzpicture}[
+        stepbox/.style={rectangle,rounded corners,fill=mineblue!20,draw=mineblue,
+                     minimum width=1.9cm,minimum height=0.85cm,align=center,font=\scriptsize},
+        arrow/.style={->,thick,mineblue},
+        scale=1]
+
+    \node[stepbox] (s1) at (0,0)    {1. Seleção\\de Dados};
+    \node[stepbox] (s2) at (2.4,0)  {2. Pré-\\processamento};
+    \node[stepbox] (s3) at (4.8,0)  {3. Trans-\\formação};
+    \node[stepbox,fill=minered!15,draw=minered] (s4) at (7.2,0)   {4. Mineração\\de Dados};
+    \node[stepbox,fill=minegreen!20,draw=minegreen] (s5) at (9.6,0) {5. Avaliação};
+    \node[stepbox,fill=mineorange!20,draw=mineorange] (s6) at (12.0,0) {6. Utilização};
+
+    \draw[arrow] (s1)--(s2);
+    \draw[arrow] (s2)--(s3);
+    \draw[arrow] (s3)--(s4);
+    \draw[arrow] (s4)--(s5);
+    \draw[arrow] (s5)--(s6);
+
+    % Feedback arrows (above)
+    \draw[->,thick,mineorange,dashed] (s5.north) -- ++(0,0.9)
+        -- node[above,font=\tiny\color{mineorange}]{realimentação} ++(-4.8,0) -- (s3.north);
+    \draw[->,thick,minered,dashed]    (s4.north) -- ++(0,1.6)
+        -- node[above,font=\tiny\color{minered}]{revisão} ++(-7.2,0) -- (s1.north);
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{0.3cm}
+    \begin{alertblock}{}
+        \small Processo \textbf{iterativo e interativo}: feedbacks podem reiniciar etapas anteriores.
+        A etapa 4 (Mineração) é apenas \textbf{uma} das seis fases sendo dependente de todas as anteriores.
+    \end{alertblock}
+\end{frame}
+
+% ============================================================
+% Slide: KDD Etapas 1-3
+% ============================================================
+\begin{frame}{Etapas 1 a 3: Preparação dos Dados}
+    \footnotesize
+    \begin{block}{\textcolor{mineblue}{\textbf{Etapa 1: Seleção de Dados}}}
+        Identificação e seleção dos dados relevantes. Define o universo de análise, escolhe as fontes (bancos transacionais, data warehouses, arquivos externos) e extrai o subconjunto a ser analisado. Uma boa seleção reduz ruído e custo computacional.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{alertblock}{\textbf{Etapa 2: Pré-processamento} \hfill {\small\faWarning\ 60--80\% do esforço total}}
+        Limpeza e consolidação: tratamento de valores ausentes (imputação, remoção), identificação e tratamento de \textit{outliers}, resolução de inconsistências e integração de múltiplas fontes.
+    \end{alertblock}
+    \vspace{0.2cm}
+    \begin{block}{\textcolor{minegreen}{\textbf{Etapa 3: Transformação}}}
+        Conversão para formato adequado ao algoritmo: normalização, \textit{One-Hot Encoding}, \textit{feature engineering}, redução de dimensionalidade (PCA, t-SNE) e discretização de variáveis contínuas.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% Slide: KDD Etapas 4-6
+% ============================================================
+\begin{frame}{Etapas 4 a 6: Mineração e Utilização}
+    \footnotesize
+    \begin{block}{\textcolor{minered}{\textbf{Etapa 4: Mineração de Dados}}}
+        Aplicação de algoritmos para descobrir padrões, regras, clusters ou modelos nos dados transformados. A escolha depende da tarefa (classificação, regressão, agrupamento, associação) e dos objetivos do negócio.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{block}{\textcolor{minegreen}{\textbf{Etapa 5: Interpretação e Avaliação}}}
+        Validação dos padrões com métricas adequadas: acurácia, F1-score, AUC-ROC (classificação); RMSE, MAE (regressão). O domínio do negócio é fundamental para distinguir padrões genuínos de artefatos estatísticos.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{exampleblock}{\textcolor{mineorange}{\textbf{Etapa 6: Utilização do Conhecimento}}}
+        Integração do modelo a sistemas de produção. O conhecimento é incorporado as estratégias organizacionais. Novas descobertas frequentemente geram novas perguntas, \textbf{reiniciando o ciclo KDD}.
+    \end{exampleblock}
+\end{frame}
+
+% ============================================================
+% Slide: CRISP-DM
+% ============================================================
+\begin{frame}{Metodologia CRISP-DM}
+     \footnotesize
+    \begin{center}
+    \begin{tikzpicture}[scale=0.78]
+    \pgfmathsetmacro{\crispdmN}{6}
+    \pgfmathsetmacro{\crispdmR}{2.8}
+    \pgfmathsetmacro{\crispdmIR}{0.7}
+    \foreach \idx/\sectxt/\cname in {%
+      0/{Entendimento\\do Neg\'{o}cio}/mineblue,%
+      1/{Entendimento\\dos Dados}/mineorange,%
+      2/{Prepara\c{c}\~{a}o\\dos Dados}/minegreen,%
+      3/{Modelagem}/purple,%
+      4/{Avalia\c{c}\~{a}o}/minered%
+    }{%
+      \pgfmathsetmacro{\secA}{90 - \idx*360/\crispdmN}%
+      \pgfmathsetmacro{\secB}{90 - (\idx+1)*360/\crispdmN}%
+      \pgfmathsetmacro{\secMid}{90 - (\idx+0.5)*360/\crispdmN}%
+      \colorlet{tmpsec}{\cname}%
+      \fill[tmpsec!30] (\secA:\crispdmIR) -- (\secA:\crispdmR) arc(\secA:\secB:\crispdmR) -- (\secB:\crispdmIR) arc(\secB:\secA:\crispdmIR) -- cycle;%
+      \draw[tmpsec,thick] (\secA:\crispdmIR) -- (\secA:\crispdmR) arc(\secA:\secB:\crispdmR) -- (\secB:\crispdmIR) arc(\secB:\secA:\crispdmIR) -- cycle;%
+      \node[font=\tiny\bfseries,align=center,text width=1.6cm] at (\secMid:1.85) {\sectxt};%
+    }%
+    \colorlet{tmpsec}{minegreen!60!mineblue}%
+    \pgfmathsetmacro{\secA}{90 - 5*360/\crispdmN}%
+    \pgfmathsetmacro{\secB}{90 - 6*360/\crispdmN}%
+    \pgfmathsetmacro{\secMid}{90 - 5.5*360/\crispdmN}%
+    \fill[tmpsec!30] (\secA:\crispdmIR) -- (\secA:\crispdmR) arc(\secA:\secB:\crispdmR) -- (\secB:\crispdmIR) arc(\secB:\secA:\crispdmIR) -- cycle;%
+    \draw[tmpsec,thick] (\secA:\crispdmIR) -- (\secA:\crispdmR) arc(\secA:\secB:\crispdmR) -- (\secB:\crispdmIR) arc(\secB:\secA:\crispdmIR) -- cycle;%
+    \node[font=\tiny\bfseries,align=center,text width=1.6cm] at (\secMid:1.85) {Implanta\c{c}\~{a}o};
+    \node[circle,fill=mineblue,text=white,font=\scriptsize\bfseries,minimum size=1.3cm] at (0,0) {DADOS};
+    \draw[->,thick,minegray,dashed] (0:3.2) arc(0:340:3.2);
+    \end{tikzpicture}
+    \end{center}
+    \begin{center}
+        \small \textbf{CRISP-DM} (\textit{Cross-Industry Standard Process for Data Mining})\\
+        \footnotesize Diferença para o KDD é que o CRISP-DM incorpora explicitamente a \textbf{perspectiva de negócios}.
+    \end{center}
+\end{frame}
+
+% ============================================================
+% Slide: CRISP-DM Fases Detalhadas
+% ============================================================
+\begin{frame}{CRISP-DM: As 6 Fases em Detalhe}
+    \small
+    \begin{enumerate}
+        \item[\textbf{1.}] \textbf{\textcolor{mineblue}{Entendimento do Negócio:}}
+            Definição precisa do problema, critérios de sucesso e viabilidade.
+            \textit{Um mal entendimento é a principal causa de falha em projetos de DM.}
+        \pause
+        \item[\textbf{2.}] \textbf{\textcolor{mineorange}{Entendimento dos Dados:}}
+            Coleta inicial, exploração (estatísticas descritivas, visualizações), identificação de problemas de qualidade.
+        \pause
+        \item[\textbf{3.}] \textbf{\textcolor{minegreen}{Preparação dos Dados:}}
+            Limpeza, \textit{feature engineering}, divisão em treino/validação/teste. Corresponde as etapas 2 e 3 do KDD.
+        \pause
+        \item[\textbf{4.}] \textbf{\textcolor{purple}{Modelagem:}}
+            Seleção e aplicação de técnicas, ajuste de parâmetros, comparação de modelos. Frequentemente requer retorno a fase 3.
+        \pause
+        \item[\textbf{5.}] \textbf{\textcolor{minered}{Avaliação:}}
+            Verificação rigorosa dos critérios de negócio. A aprovação nesta fase autoriza a implantação.
+        \pause
+        \item[\textbf{6.}] \textbf{\textcolor{mineblue}{Implantação:}}
+            Integração ao ambiente de produção, monitoramento (\textit{data drift}), documentação e lições aprendidas.
+    \end{enumerate}
+\end{frame}
+
+% ==============================================================================
+\section{Tarefas de Mineração}
+% ==============================================================================
+
+\begin{frame}{Principais Tarefas de Mineração de Dados}
+    \begin{center}
+    \footnotesize
+    \begin{tabular}{>{\bfseries\color{mineblue}}p{2.8cm} p{2.0cm} p{5.5cm}}
+        \hline
+        \rowcolor{mineblue!15}
+        \textbf{Tarefa} & \textbf{Tipo} & \textbf{Exemplo de Aplicação} \\
+        \hline
+        Classificação & Supervisionado & Detecção de spam; diagnóstico médico \\
+        \hline
+        Regressão & Supervisionado & Preço de imóvel; demanda futura \\
+        \hline
+        Agrupamento (Clustering) & Não Superv. & Segmentação de clientes \\
+        \hline
+        Regras de Associação & Não Superv. & Análise de cesta de compras \\
+        \hline
+        Detecção de Anomalias & Semi-Superv. & Fraude financeira; falha em equipamentos \\
+        \hline
+        Sumarização & N/A & Perfis de usuários; relatórios automáticos \\
+        \hline
+    \end{tabular}
+    \end{center}
+\end{frame}
+
+% ============================================================
+% Slide: Supervisionado vs Não Supervisionado
+% ============================================================
+\begin{frame}{Como Escolher a Tarefa Correta?}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.8]
+
+        % Pergunta central (topo)
+        \node[rectangle,rounded corners,draw=mineorange,fill=mineorange!20,
+              font=\small\bfseries,align=center,minimum width=4.2cm,minimum height=1.0cm]
+              (q) at (0,3.5) {``Tenho r\'{o}tulos\\nos dados?''};
+
+        % Supervisionado (esquerda)
+        \node[rectangle,rounded corners,draw=mineblue,fill=mineblue!15,
+              minimum width=5.2cm,minimum height=1.0cm,align=center,font=\small]
+              (sup) at (-5,1.5)
+              {\textbf{\color{mineblue}Supervisionado}\\{\tiny Dados com r\'{o}tulos de sa\'{i}da}};
+        \node[rectangle,rounded corners,draw=mineblue,fill=mineblue!8,
+              minimum width=2.3cm,minimum height=0.85cm,align=center,font=\tiny]
+              (cls) at (-7,-0.2) {Classifica\c{c}\~{a}o\\sa\'{i}da discreta};
+        \node[rectangle,rounded corners,draw=mineblue,fill=mineblue!8,
+              minimum width=2.3cm,minimum height=0.85cm,align=center,font=\tiny]
+              (reg) at (-2.7,-0.2) {Regress\~{a}o\\sa\'{i}da cont\'{i}nua};
+
+        % Seta perpendicular: q → sup (primeiro horizontal, depois vertical)
+        \draw[->,thick,mineblue]
+            (q.west) -- (-5,3.5)
+            node[midway,above,font=\tiny\bfseries\color{mineblue}]{Sim}
+            -- (sup.north);
+
+        \draw[->,thick,mineblue] (sup.south) -- (cls.north);
+        \draw[->,thick,mineblue] (sup.south) -- (reg.north);
+
+        % Não Supervisionado (direita)
+        \node[rectangle,rounded corners,draw=minegreen,fill=minegreen!15,
+              minimum width=5.2cm,minimum height=1.0cm,align=center,font=\small]
+              (nsup) at (5,1.5)
+              {\textbf{\color{minegreen}N\~{a}o Supervisionado}\\{\tiny Dados sem r\'{o}tulos}};
+        \node[rectangle,rounded corners,draw=minegreen,fill=minegreen!8,
+              minimum width=2.3cm,minimum height=0.85cm,align=center,font=\tiny]
+              (clu) at (2.7,-0.2) {Agrupamento\\estrutura natural};
+        \node[rectangle,rounded corners,draw=minegreen,fill=minegreen!8,
+              minimum width=2.3cm,minimum height=0.85cm,align=center,font=\tiny]
+              (ass) at (7.3,-0.2) {Associa\c{c}\~{a}o\\co-ocorr\^{e}ncias};
+
+        % Seta perpendicular: q → nsup
+        \draw[->,thick,minegreen]
+            (q.east) -- (5,3.5)
+            node[midway,above,font=\tiny\bfseries\color{minegreen}]{N\~{a}o}
+            -- (nsup.north);
+
+        \draw[->,thick,minegreen] (nsup.south) -- (clu.north);
+        \draw[->,thick,minegreen] (nsup.south) -- (ass.north);
+
+    \end{tikzpicture}
+    \end{center}
+    \vspace{-0.2cm}
+    \begin{alertblock}{}
+        \tiny A escolha da tarefa deve ser guiada pelo \textbf{problema de neg\'{o}cio}, n\~{a}o pela familiaridade com um algoritmo espec\'{i}fico.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+\section{Relação com Outras Disciplinas}
+% ==============================================================================
+
+\begin{frame}{Interdisciplinaridade da Mineração de Dados}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.92]
+    \begin{scope}[fill opacity=0.35]
+    \fill[mineblue]   (-1.2, 0.8) circle(2.0);
+    \fill[mineorange] ( 1.2, 0.8) circle(2.0);
+    \fill[minegreen]  (-1.2,-0.8) circle(2.0);
+    \fill[purple]     ( 1.2,-0.8) circle(2.0);
+    \end{scope}
+    \node[font=\small\bfseries,color=mineblue]   at (-3.0, 2.0) {Estatística};
+    \node[font=\small\bfseries,color=mineorange] at ( 3.0, 2.0) {Machine Learning};
+    \node[font=\small\bfseries,color=minegreen]  at (-3.0,-2.0) {Bancos de Dados};
+    \node[font=\small\bfseries,color=purple]     at ( 3.0,-2.0) {Rec.\ de Padrões};
+    \node[fill=white,rounded corners,font=\scriptsize\bfseries\color{minered},
+          align=center,draw=minered,inner sep=4pt] at (0,0)
+          {Mineração\\de Dados};
+    \end{tikzpicture}
+    \end{center}
+    \begin{center}
+        \small A Inteligência Artificial também contribui com representações de conhecimento e, modernamente, com \textbf{LLMs} para mineração de texto.
+    \end{center}
+\end{frame}
+
+% ============================================================
+% Slide: Contribuições detalhadas por disciplina
+% ============================================================
+\begin{frame}{Contribuições de Cada Disciplina}
+    \footnotesize
+    \vspace{-0.57cm}
+    \begin{block}{\textcolor{mineblue}{\faLineChart\ Estatística}}
+        Arcabouço teórico para inferência: distribuições de probabilidade, testes de hipótese, regressão e intervalos de confiança. Diferença-chave: a estatística parte de hipóteses \textit{a priori}; a DM é \textbf{predominantemente exploratória}.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\textcolor{mineorange}{\faCogs\ Machine Learning}}
+        Fornece os algoritmos centrais: Árvores de Decisão, Redes Neurais, SVM, K-Means, Random Forest, Gradient Boosting. Foco em \textbf{generalização e predição}; a DM foca também na \textbf{interpretabilidade} e descoberta de novo conhecimento.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\textcolor{minegreen}{\faDatabase\ Bancos de Dados}}
+        Infraestrutura de armazenamento, SQL, ETL (\textit{Extract, Transform, Load}), Data Warehousing e modelagem dimensional (esquema estrela e floco de neve).
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\textcolor{purple}{\faEye\ Reconhecimento de Padrões}}
+        Extração de features, análise de componentes principais (PCA) e métricas de similaridade amplamente usadas em tarefas de agrupamento e classificação.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Ferramentas}
+% ==============================================================================
+
+\begin{frame}{}
+    \footnotesize
+    \vspace{-0.5cm}
+    \begin{tabular}{>{\bfseries\color{mineblue}}p{2.4cm} p{3.8cm} p{4.4cm}}
+        \hline
+        \rowcolor{mineblue!15}
+        \textbf{Biblioteca} & \textbf{Finalidade} & \textbf{Uso em DM} \\
+        \hline
+        NumPy & Computação numérica e arrays & Matrizes de dados e álgebra linear \\
+        \hline
+        Pandas & Manipulação de dados tabulares & Limpeza, seleção e transformação \\
+        \hline
+        Scikit-learn & ML clássico e pré-processamento & Classificação, clustering, métricas \\
+        \hline
+        Matplotlib / Seaborn & Visualização 2D e estatística & Exploração e apresentação dos dados \\
+        \hline
+        SciPy & Algoritmos científicos e estatística & Otimização, testes estatísticos \\
+        \hline
+        XGBoost / LightGBM & Gradient Boosting de alta performance & Competições e produção \\
+        \hline
+        PyTorch / TensorFlow & Deep Learning & Imagens, texto, séries temporais \\
+        \hline
+        SHAP & Explicabilidade (Shapley values) & Interpretação de predições \\
+        
+        \hline
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{Ferramentas com Interface Gráfica (GUI)}
+     \footnotesize
+    \vspace{-0.5cm}
+    \begin{block}{\faUniversity\ WEKA}
+        Centenas de algoritmos de classificação, regressão, clustering e seleção de atributos. Ideal para uso \textbf{acadêmico e pedagógico}.
+    \end{block}
+    \vspace{0.18cm}
+    \begin{block}{\faSitemap\ KNIME}
+        Open-source. Fluxo de trabalho visual por nós. Amplamente adotado na indústria \textbf{farmacêutica e financeira}. Integra Python, R e Spark.
+    \end{block}
+    \vspace{0.18cm}
+    \begin{block}{\faFlash\ RapidMiner}
+        Plataforma drag-and-drop (versão community). Rápida construção de pipelines de DM \textbf{sem necessidade de código}.
+    \end{block}
+    \vspace{0.18cm}
+    \begin{block}{\faLeaf\ Orange }
+        Open-source. Interface visual excelente para ensino. Extensões para bioinformática e text mining.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Estado da Arte}
+% ==============================================================================
+
+\begin{frame}{Estado da Arte: AutoML}
+    \begin{block}{\faCogs\ AutoML --- Aprendizado Automático de Máquina}
+        AutoML automatiza a \textbf{seleção de modelos}, engenharia de features e ajuste de hiperparâmetros, tornando o Machine Learning acessível a não especialistas.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{AutoGluon} (Amazon): foca em benchmarks de alto desempenho para dados tabulares, texto e imagem, com ensembles automáticos
+        \item \textbf{H2O AutoML}: constrói automaticamente um leaderboard de modelos e seleciona o melhor
+        \item \textbf{TPOT}: usa programação genética para otimizar pipelines de Scikit-learn
+        \item \textbf{Auto-sklearn 2.0}: aplica meta-aprendizado e Bayesian Optimization para seleção de algoritmos
+        \item \textbf{PyCaret}: biblioteca Python low-code que facilita a comparação e o deploy de modelos
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Estado da Arte: Explainable AI (XAI)}
+    \begin{block}{\faEye\ Por que Interpretabilidade?}
+        Em aplicações de alto impacto (crédito, saúde, justiça), modelos caixa-preta são insuficientes. A interpretabilidade é requisito \textbf{ético e legal} (LGPD, GDPR).
+    \end{block}
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{SHAP} (Lundberg \& Lee, 2017): baseado na teoria dos jogos cooperativos. Atribui contribuições individuais a cada \textit{feature} para uma predição. 
+        \item \textbf{LIME} (Ribeiro et al., 2016): aproxima qualquer modelo caixa-preta por um modelo interpretável localmente, em torno de uma instância específica.
+        \item \textbf{Grad-CAM}: para visão computacional, destaca as regiões da imagem que mais influenciaram a predição.
+        \item \textbf{Counterfactual Explanations}: responde ``o que teria que mudar para obter uma predição diferente?''
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Estado da Arte: Federated Learning}
+    \begin{block}{\faLock\ Aprendizado Federado (McMahan et al., 2017)}
+        Permite treinar modelos \textbf{sem centralizar dados sensíveis}. Os dados permanecem nos dispositivos locais (smartphones, hospitais, bancos); apenas gradientes são compartilhados com o servidor central.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{Alta relevância:} contexto da LGPD brasileira e do GDPR europeu
+        \item \textbf{Aplicações:} teclados preditivos (Google Gboard), detecção de fraude bancária distribuída, diagnóstico médico federado
+        \item \textbf{Desafios:}
+            \begin{itemize}
+                \item Heterogeneidade dos dados entre clientes (\textit{non-IID})
+                \item Comunicação eficiente entre dispositivos e servidor
+                \item Robustez a ataques (\textit{envenenamento de gradientes})
+            \end{itemize}
+    \end{itemize}
+    \vspace{0.1cm}
+    \begin{alertblock}{}
+        \small Representa a convergência entre \textbf{eficiência preditiva} e \textbf{privacidade de dados}.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Estado da Arte: LLMs em Mineração de Dados}
+    \begin{block}{\faCommentsO\ Grandes Modelos de Linguagem (LLMs)}
+        GPT-4, Llama 3 e Gemini estão abrindo novas possibilidades para a mineração de dados além do texto puro.
+    \end{block}
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{Text Mining Avançado:} superam TF-IDF e Word2Vec em classificação de texto, análise de sentimentos e extração de entidades
+        \item \textbf{Data Augmentation:} geração sintética de dados para treinar modelos em domínios com poucos exemplos (\textit{few-shot learning})
+        \item \textbf{Feature Engineering Automático:} geração de descrições semânticas de features e embeddings ricos para dados tabulares
+        \item \textbf{Análise Conversacional:} ferramentas como Code Interpreter (OpenAI) permitem interagir com dados usando \textbf{linguagem natural}
+    \end{itemize}
+\end{frame}
+
+% ==============================================================================
+\section{Ética e LGPD}
+% ==============================================================================
+
+\begin{frame}{Ética e Responsabilidade em Mineração de Dados}
+    \begin{alertblock}{\faWarning\ Atenção: Ética não é Opcional}
+        Vieses em dados de treino podem causar discriminação sistemática. Ignorar a LGPD pode resultar em multas de até 2\% do faturamento (limite de R\$~50 milhões por infração).
+    \end{alertblock}
+    \vspace{0.2cm}
+    \begin{block}{\faBalanceScale\ Viés Algorítmico (\textit{Algorithmic Bias})}
+        Modelos treinados com dados históricos podem perpetuar e amplificar desigualdades existentes. Exemplo: sistema COMPAS usado na Justiça americana apresentou tendência contra réus negros ao prever reincidência criminal.
+    \end{block}
+    \vspace{0.15cm}
+    \begin{block}{\faLock\ Privacidade de Dados}
+        Dados pessoais sensíveis exigem \textbf{anonimização eficaz}, consentimento informado e minimização do uso que são princípios centrais da LGPD.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% Slide: LGPD e Transparência
+% ============================================================
+\begin{frame}{LGPD e Transparência Algorítmica}
+    
+    \begin{block}{\faGavel\ LGPD --- Lei Geral de Proteção de Dados (Lei 13.709/2018)}
+        Inspirada no GDPR europeu. Estabelece:
+        \begin{itemize}
+            \item \textbf{Direitos dos titulares:} acesso, correção, exclusão e portabilidade dos dados pessoais
+            \item \textbf{Obrigações:} controladores e operadores devem garantir conformidade em todo o ciclo de vida dos dados
+            \item \textbf{Penalidades:} multas de até 2\% do faturamento (R\$~50 milhões por infração)
+        \end{itemize}
+    \end{block}
+    \vspace{-0.4cm}
+    \begin{block}{\faEye\ Transparência Algorítmica}
+        O ``direito de explicação'' impõe restrições ao uso de modelos caixa-preta em contextos de alto impacto.
+        Decisões automatizadas significativas \textbf{devem poder ser explicadas} aos titulares afetados.
+        Isso favorece o uso de XAI (SHAP, LIME) em sistemas de crédito, saúde e seleção de pessoal.
+    \end{block}
+\end{frame}
+
+% ============================================================
+% Slide: Fairness e Accountability
+% ============================================================
+\begin{frame}{\textit{Fairness} e Responsabilidade (\textit{Accountability})}
+    \vspace{-0.6cm}
+    \begin{block}{\textit{Fairness} em ML: Métricas de Equidade}
+        \begin{itemize}
+            \item \textbf{Demographic Parity:} taxa de predições positivas deve ser igual entre grupos demográficos
+            \item \textbf{Equalized Odds:} TVP e TFP iguais entre grupos protegidos (gênero, raça, etc.)
+            \item \textbf{Individual Fairness:} indivíduos similares devem receber predições similares
+        \end{itemize}
+        \vspace{0.1cm}
+        \textit{\small Atenção: algumas dessas métricas são matematicamente incompatíveis entre si (impossibilidade de Fairness).}
+    \end{block}
+    
+    \begin{alertblock}{\faQuestion\ Responsabilidade (\textit{Accountability})}
+        Quando um modelo causa dano, quem é responsável: o \textbf{desenvolvedor} do algoritmo, a \textbf{empresa} que o implantou ou o \textbf{usuário} que tomou a decisão final?
+        A ausência de frameworks claros é uma lacuna ética e legal importante que o profissional de dados deve considerar.
+    \end{alertblock}
+\end{frame}
+
+% ==============================================================================
+% Slide Final: Referências
+% ==============================================================================
+
+\begin{frame}{Referências e Material de Estudo}
+    \begin{thebibliography}{99}
+        \setbeamertemplate{bibliography item}[text]
+        \bibitem{fayyad1996}
+        \tiny FAYYAD, U. et al. From Data Mining to Knowledge Discovery in Databases. \textit{AI Magazine}, v.17, n.3, 1996.
+        \bibitem{han2011}
+        \tiny HAN, J.; PEI, J.; KAMBER, M. \textit{Data Mining: Concepts and Techniques}. 3.ed. Morgan Kaufmann, 2011.
+        \bibitem{wirth2000}
+        \tiny WIRTH, R.; HIPP, J. CRISP-DM: Towards a Standard Process Model for Data Mining. \textit{PKDD}, 2000.
+        \bibitem{witten2016}
+        \tiny WITTEN, I. H. et al. \textit{Data Mining: Practical ML Tools and Techniques}. 4.ed. Morgan Kaufmann, 2016.
+        \bibitem{lundberg2017}
+        \tiny LUNDBERG, S. M.; LEE, S.-I. A Unified Approach to Interpreting Model Predictions. \textit{NeurIPS}, 2017.
+        \bibitem{mcmahan2017}
+        \tiny McMAHAN, B. et al. Communication-Efficient Learning of Deep Networks from Decentralized Data. \textit{AISTATS}, 2017.
+    \end{thebibliography}
+    
+\end{frame}
+
+\end{document}

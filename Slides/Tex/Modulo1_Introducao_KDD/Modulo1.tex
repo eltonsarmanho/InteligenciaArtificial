@@ -1,0 +1,600 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm,top=3cm,bottom=3cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,backgrounds,calc,shadows.blur,decorations.pathmorphing,mindmap,trees,patterns,decorations.text}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{fontawesome5}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins,theorems}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\setlength{\headheight}{14pt}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{caption}
+
+% Colors
+\definecolor{mineblue}{RGB}{0,90,180}
+\definecolor{mineorange}{RGB}{230,115,0}
+\definecolor{minegreen}{RGB}{34,139,34}
+\definecolor{minered}{RGB}{180,20,40}
+\definecolor{minegray}{RGB}{100,100,100}
+\definecolor{codebg}{RGB}{250,250,250}
+\definecolor{headerbg}{RGB}{0,90,180}
+
+% Custom tcolorbox environments
+\newtcolorbox{definicaobox}[1]{title={\faIcon{book} #1},colback=blue!4!white,colframe=mineblue,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{exemplobox}[1]{title={\faIcon{lightbulb} #1},colback=orange!4!white,colframe=mineorange,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{dicabox}[1]{title={\faIcon{info-circle} #1},colback=green!4!white,colframe=minegreen,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{atencaobox}[1]{title={\faIcon{exclamation-triangle} #1},colback=red!4!white,colframe=minered,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{estadoartebox}[1]{title={\faIcon{rocket} #1},colback=purple!4!white,colframe=purple!60!black,fonttitle=\bfseries,breakable,enhanced}
+
+% Python listings style
+\lstdefinestyle{mypython}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{minegray}\itshape,
+    keywordstyle=\color{mineblue}\bfseries,
+    stringstyle=\color{minegreen},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{minegray!40},
+    numbers=left,
+    numberstyle=\tiny\color{minegray},
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+\lstset{style=mypython}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \textcolor{mineblue}{\textbf{Mineração de Dados}}}
+\fancyhead[R]{\small Módulo 1: Introdução ao KDD}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title formatting
+\titleformat{\section}{\large\bfseries\color{mineblue}}{\thesection}{0.8em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{mineorange}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\small\bfseries\color{minegray}}{\thesubsubsection}{0.8em}{}
+
+\title{
+\begin{tcolorbox}[colback=mineblue,coltext=white,colframe=mineblue,width=\textwidth,sharp corners]
+\centering
+
+\LARGE \faIcon{database} Mineração de Dados\\[4pt]
+\Large Módulo 1: Introdução à Mineração de Dados\\e Descoberta de Conhecimento (KDD)\\[6pt]
+\end{tcolorbox}
+}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\tableofcontents
+\newpage
+
+%=============================================================
+\section{Objetivos de Aprendizagem}
+%=============================================================
+
+Ao final deste módulo, o estudante será capaz de:
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+  \item \faIcon{check-circle}~\textbf{Compreender} o conceito formal de Mineração de Dados e sua distinção em relação a outras disciplinas correlatas, como Estatística Clássica, Business Intelligence e Aprendizado de Máquina.
+
+  \item \faIcon{check-circle}~\textbf{Distinguir} os diferentes tipos de tarefas de mineração de dados (classificação, regressão, agrupamento, associação, detecção de anomalias e sumarização), reconhecendo suas características e cenários de aplicação.
+
+  \item \faIcon{check-circle}~\textbf{Aplicar} o processo KDD (Knowledge Discovery in Databases) de Fayyad et al.\ (1996) e a metodologia CRISP-DM a problemas reais de descoberta de conhecimento.
+
+  \item \faIcon{check-circle}~\textbf{Analisar} a relação entre Mineração de Dados e outras disciplinas científicas, incluindo Estatística, Inteligência Artificial, Banco de Dados e Reconhecimento de Padrões.
+
+  \item \faIcon{check-circle}~\textbf{Construir} pipelines básicos de análise de dados utilizando as principais bibliotecas do ecossistema Python (Pandas, Scikit-learn, Matplotlib, Seaborn).
+
+  \item \faIcon{check-circle}~\textbf{Avaliar} criticamente o uso de técnicas de mineração de dados sob perspectivas éticas, considerando viés algorítmico, privacidade e a LGPD (Lei Geral de Proteção de Dados).
+
+  \item \faIcon{check-circle}~\textbf{Relacionar} o contexto histórico da área com o estado da arte atual (AutoML, XAI, LLMs, Federated Learning), compreendendo a evolução do campo.
+
+  \item \faIcon{check-circle}~\textbf{Identificar} as ferramentas especializadas para mineração de dados (WEKA, KNIME, RapidMiner, Orange, H2O.ai) e o ecossistema Python relevante para aplicações acadêmicas e profissionais.
+\end{enumerate}
+
+%=============================================================
+\section{Introdução}
+%=============================================================
+
+Vivemos na era dos dados. A cada minuto, são gerados mais de 2,5 quintilhões de bytes de informação no mundo resultado das redes sociais, transações financeiras, sensores de IoT, registros médicos, registros de navegação web e inúmeras outras fontes digitais. Esse fenômeno, frequentemente descrito pelos ``três Vs'' do Big Data (Volume, Velocidade e Variedade), criou uma lacuna fundamental entre a quantidade de dados disponíveis e a capacidade humana de extrair significado deles de forma manual. É nesse contexto que a \textbf{Mineração de Dados} (do inglês, \textit{Data Mining}) emerge como disciplina essencial: ela fornece os métodos, algoritmos e ferramentas para transformar grandes massas de dados brutos em conhecimento acionável.
+
+O impacto prático da Mineração de Dados já é visível no cotidiano. A Netflix utiliza algoritmos de filtragem colaborativa para recomendar filmes e séries, reduzindo significativamente o custo de retenção de assinantes. Instituições financeiras como Visa e Mastercard aplicam modelos de detecção de anomalias para identificar transações fraudulentas em tempo real, prevenindo bilhões de dólares em perdas anuais. Na medicina, modelos preditivos auxiliam no diagnóstico precoce de doenças como câncer de mama e diabetes a partir de exames de imagem e histórico clínico. Em todos esses casos, o valor não está nos dados em si, mas no \textit{padrão} e no \textit{conhecimento} que podem ser extraídos deles.
+
+A Mineração de Dados não é uma disciplina isolada ela ocupa a intersecção de várias áreas do conhecimento. De um lado, herda o rigor matemático da \textbf{Estatística}, que fornece as bases para amostragem, inferência e modelagem probabilística. De outro, beneficia-se dos avanços do \textbf{Aprendizado de Máquina} (Machine Learning), que desenvolveu algoritmos capazes de aprender padrões em dados de alta dimensionalidade. Os \textbf{Bancos de Dados} fornecem a infraestrutura para armazenar, consultar e gerenciar os dados em escala. E a \textbf{Inteligência Artificial} contribui com representações de conhecimento e mecanismos de raciocínio. Ao longo deste módulo, exploraremos cada um desses elos e veremos como o processo KDD integra todas essas contribuições em um fluxo coerente de descoberta de conhecimento.
+
+%=============================================================
+\section{Definição e Conceitos Fundamentais}
+%=============================================================
+
+\subsection{Definição Formal}
+
+\begin{definicaobox}{Definição Clássica (Fayyad et al., 1996)}
+Mineração de Dados é a extração de informação \textbf{implícita},
+\textbf{previamente desconhecida} e \textbf{potencialmente útil}
+a partir de dados armazenados em grandes bases de dados.
+\end{definicaobox}
+
+Essa definição clássica, proposta por Usama Fayyad, Gregory Piatetsky-Shapiro e Padhraic Smyth em 1996, destaca três atributos fundamentais que distinguem a mineração de dados de outras formas de análise:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Implícita:} o conhecimento não é diretamente observável na estrutura dos dados, mas requer processos de busca e inferência para ser descoberto.
+  \item \textbf{Previamente desconhecida:} o conhecimento deve ser novo não se trata de confirmar hipóteses já conhecidas, mas de descobrir relações inesperadas.
+  \item \textbf{Potencialmente útil:} o conhecimento deve ter valor prático ou teórico, sendo passível de ação ou refinamento do entendimento.
+\end{itemize}
+
+\begin{exemplobox}{Exemplo Ilustrativo}
+Um supermercado coleta bilhões de transações de compra. Um analista poderia notar manualmente que certas categorias vendem bem. Porém, apenas a mineração de dados pode revelar padrões como ``clientes que compram fraldas às sextas-feiras também tendem a comprar cerveja'' uma associação inesperada e valiosa para estratégias de posicionamento de prateleiras.
+\end{exemplobox}
+
+\subsection{Distinção entre Termos}
+
+A área de análise de dados possui uma terminologia rica e às vezes confusa. A tabela a seguir apresenta as principais distinções:
+
+\begin{table}[ht]
+\centering
+\caption{Distinção entre conceitos relacionados à análise de dados}
+\label{tab:distincoes}
+\begin{tabular}{>{\bfseries}p{3.0cm} p{3.5cm} p{3.5cm} p{4.0cm}}
+\toprule
+\textbf{Conceito} & \textbf{Foco Principal} & \textbf{Orientação} & \textbf{Exemplo de Uso} \\
+\midrule
+Business Intelligence & Relatórios e dashboards & Dados históricos & KPIs mensais de vendas \\
+\midrule
+OLAP & Análise multidimensional & Dados agregados & Cubo de vendas por região e período \\
+\midrule
+Estatística Clássica & Inferência e testes de hipótese & Amostras pequenas & Teste A/B de interface web \\
+\midrule
+Machine Learning & Aprendizado a partir de dados & Preditivo e adaptativo & Classificação de e-mails como spam \\
+\midrule
+Mineração de Dados & Descoberta de padrões em grandes volumes & Exploratório e preditivo & Detecção de fraude em cartões \\
+\midrule
+Big Data & Processamento de volumes massivos & Infraestrutura e escala & Análise de logs de servidores em tempo real \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Linha do Tempo}
+
+A figura a seguir apresenta a evolução histórica das áreas que contribuem para a Mineração de Dados moderna:
+
+\vspace{0.5cm}
+\begin{center}
+\begin{tikzpicture}[scale=0.85,
+    event/.style={circle,fill=mineblue,text=white,font=\tiny\bfseries,minimum size=0.7cm},
+    label/.style={text width=2.5cm,align=center,font=\tiny}]
+% Draw horizontal arrow line
+\draw[->,thick,mineblue] (0,0) -- (14,0) node[right]{\small Tempo};
+
+% 1960s: Bancos de Dados
+\node[event] (e1) at (1,0) {60s};
+\node[label,above=0.15cm of e1] {Bancos de\\Dados\\Relacionais};
+
+% 1970s: Sistemas Especialistas
+\node[event] (e2) at (3,0) {70s};
+\node[label,below=0.15cm of e2] {Sistemas\\Especialistas\\(IA Clássica)};
+
+% 1980s: Machine Learning
+\node[event] (e3) at (5,0) {80s};
+\node[label,above=0.15cm of e3] {Machine\\Learning\\e Redes Neurais};
+
+% 1990s: KDD e Data Mining
+\node[event] (e4) at (7,0) {90s};
+\node[label,below=0.15cm of e4] {KDD e\\Data Mining\\(Fayyad, 1996)};
+
+% 2000s: Web Mining
+\node[event] (e5) at (9,0) {2000s};
+\node[label,above=0.15cm of e5] {Web Mining\\e Text\\Mining};
+
+% 2010s: Big Data & Deep Learning
+\node[event] (e6) at (11,0) {2010s};
+\node[label,below=0.15cm of e6] {Big Data\\e Deep\\Learning};
+
+% 2020s: AutoML & LLMs
+\node[event] (e7) at (13,0) {2020s};
+\node[label,above=0.15cm of e7] {AutoML,\\LLMs e\\IA Generativa};
+\end{tikzpicture}
+\end{center}
+\vspace{0.3cm}
+
+%=============================================================
+\section{O Processo KDD}
+%=============================================================
+
+\subsection{Etapas do KDD (Fayyad, 1996)}
+
+O processo de Descoberta de Conhecimento em Bancos de Dados (KDD - \textit{Knowledge Discovery in Databases}) foi formalizado por Fayyad et al.\ (1996) como um processo iterativo e interativo composto por múltiplas etapas. A mineração de dados, nesse contexto, é apenas uma das fases do processo a mais central, mas dependente de todas as anteriores.
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Etapa \arabic*:}]
+  \item \textbf{Seleção de Dados:} Identificação e seleção dos dados relevantes para o problema em questão. Envolve a definição do universo de análise, a escolha das fontes de dados (bancos de dados transacionais, data warehouses, arquivos externos) e a extração do subconjunto a ser analisado. Uma boa seleção reduz ruído e custo computacional nas etapas subsequentes.
+
+  \item \textbf{Pré-processamento:} Limpeza e consolidação dos dados selecionados. Inclui o tratamento de valores ausentes (imputação, remoção ou marcação), a identificação e o tratamento de outliers, a resolução de inconsistências e a integração de dados provenientes de múltiplas fontes. Esta é frequentemente a etapa que consome mais tempo estima-se que 60--80\% do esforço de um projeto de DM seja dedicado ao pré-processamento.
+
+  \item \textbf{Transformação:} Conversão e enriquecimento dos dados pré-processados para um formato adequado ao algoritmo de mineração. Inclui normalização e escalonamento de atributos numéricos, codificação de variáveis categóricas (One-Hot Encoding, Label Encoding), criação de novos atributos (\textit{feature engineering}), redução de dimensionalidade (PCA, t-SNE) e discretização de variáveis contínuas.
+
+  \item \textbf{Mineração de Dados:} Aplicação de algoritmos de aprendizado para descobrir padrões, regras, clusters ou modelos nos dados transformados. A escolha do algoritmo depende do tipo de tarefa (classificação, regressão, agrupamento, associação), das características dos dados e dos objetivos do negócio. Esta etapa produz representações de conhecimento brutas que ainda precisam ser interpretadas.
+
+  \item \textbf{Interpretação e Avaliação:} Análise e validação dos padrões descobertos. Avalia-se a qualidade dos modelos usando métricas adequadas (acurácia, F1-score, AUC-ROC para classificação; RMSE, MAE para regressão). Determina-se se o conhecimento descoberto é novo, interessante, compreensível e acionável. Nesta etapa, o domínio do negócio é fundamental para distinguir padrões genuinamente úteis de artefatos estatísticos.
+
+  \item \textbf{Utilização do Conhecimento:} Implantação do conhecimento descoberto. O modelo é integrado a sistemas de produção, os resultados são apresentados a gestores e tomadores de decisão, e o conhecimento é incorporado às estratégias organizacionais. O processo é iterativo: novas descobertas frequentemente geram novas perguntas, reiniciando o ciclo KDD.
+\end{enumerate}
+
+\begin{center}
+\begin{tikzpicture}[
+    stepbox/.style={rectangle,rounded corners,fill=mineblue!20,draw=mineblue,
+                 minimum width=3cm,minimum height=0.9cm,align=center,font=\small},
+    arrow/.style={->,thick,mineblue}]
+% Vertical flow
+\node[stepbox] (s1) at (0,0) {Seleção\\de Dados};
+\node[stepbox] (s2) at (0,-1.8) {Pré-\\processamento};
+\node[stepbox] (s3) at (0,-3.6) {Transformação};
+\node[stepbox] (s4) at (0,-5.4) {Mineração\\de Dados};
+\node[stepbox,fill=minegreen!20,draw=minegreen] (s5) at (0,-7.2) {Avaliação\\do Conhecimento};
+
+\draw[arrow] (s1)--(s2);
+\draw[arrow] (s2)--(s3);
+\draw[arrow] (s3)--(s4);
+\draw[arrow] (s4)--(s5);
+
+% Feedback arrows on right
+\draw[arrow,dashed,mineorange] (s5.east) -- ++(1.5,0) -- ++(0,5.4) -- (s3.east);
+\draw[arrow,dashed,minered] (s4.east) -- ++(1,0) -- ++(0,3.6) -- (s2.east);
+
+% Labels on arrows
+\node[font=\tiny,mineorange,right] at (1.5,-4.0) {Realimentação};
+\node[font=\tiny,minered,right] at (1.0,-3.0) {Revisão};
+\end{tikzpicture}
+\end{center}
+
+\subsection{CRISP-DM}
+
+A metodologia CRISP-DM (\textit{Cross-Industry Standard Process for Data Mining}), proposta por Wirth e Hipp (2000) e desenvolvida por um consórcio de empresas europeias, tornou-se o padrão de facto para projetos de mineração de dados na indústria. Diferente do KDD acadêmico, o CRISP-DM incorpora explicitamente a perspectiva de negócios.
+
+\textbf{Fase 1 Entendimento do Negócio:} O projeto começa com a compreensão profunda dos objetivos de negócio. Nesta fase, define-se o problema de forma precisa, identificam-se as partes interessadas, estabelece-se o critério de sucesso do projeto e avalia-se a viabilidade técnica e os recursos disponíveis. Um mal entendimento do negócio é a principal causa de falha em projetos de DM.
+
+\textbf{Fase 2 Entendimento dos Dados:} Coleta inicial dos dados, exploração preliminar (estatísticas descritivas, visualizações), identificação de problemas de qualidade e formulação de hipóteses. Ferramentas de Análise Exploratória de Dados (EDA) são amplamente utilizadas nesta fase.
+
+\textbf{Fase 3 Preparação dos Dados:} Seleção, limpeza, construção e formatação dos dados para a modelagem. Esta fase corresponde aproximadamente ao pré-processamento e transformação do KDD. Inclui o tratamento de dados faltantes, outliers, criação de features derivadas e divisão em conjuntos de treino, validação e teste.
+
+\textbf{Fase 4 Modelagem:} Seleção e aplicação de técnicas de modelagem. Nesta fase, parâmetros são ajustados, modelos são treinados e diferentes abordagens são comparadas. A modelagem é iterativa e frequentemente requer retorno à fase de preparação de dados.
+
+\textbf{Fase 5 Avaliação:} Avaliação rigorosa do modelo em relação aos critérios de sucesso do negócio. Verifica-se se todos os requisitos de negócio foram atendidos e se o modelo é robusto e generalizável. A aprovação nesta fase autoriza a implantação.
+
+\textbf{Fase 6 Implantação:} Integração do modelo ao ambiente de produção. Inclui o planejamento da implantação, o monitoramento do modelo em produção (detecção de \textit{data drift} e degradação de desempenho), a documentação do projeto e as lições aprendidas.
+
+\vspace{0.5cm}
+\begin{center}
+\begin{tikzpicture}
+\def\n{6}
+\def\radius{3.2}
+\def\innerradius{0.8}
+% Setores 0-4: loop simples com \colorlet para evitar espaço na expansão de \col
+\foreach \idx/\sectxt/\cname in {%
+  0/{Entendimento\\do Neg\'{o}cio}/mineblue,%
+  1/{Entendimento\\dos Dados}/mineorange,%
+  2/{Prepara\c{c}\~{a}o\\dos Dados}/minegreen,%
+  3/{Modelagem}/purple,%
+  4/{Avalia\c{c}\~{a}o}/minered%
+}{%
+  \pgfmathsetmacro{\secA}{90 - \idx*360/\n}%
+  \pgfmathsetmacro{\secB}{90 - (\idx+1)*360/\n}%
+  \pgfmathsetmacro{\secMid}{90 - (\idx+0.5)*360/\n}%
+  \colorlet{tmpsec}{\cname}%
+  \fill[tmpsec!30] (\secA:\innerradius) -- (\secA:\radius) arc(\secA:\secB:\radius) -- (\secB:\innerradius) arc(\secB:\secA:\innerradius) -- cycle;%
+  \draw[tmpsec,thick] (\secA:\innerradius) -- (\secA:\radius) arc(\secA:\secB:\radius) -- (\secB:\innerradius) arc(\secB:\secA:\innerradius) -- cycle;%
+  \node[font=\tiny\bfseries,align=center,text width=1.8cm] at (\secMid:2.1) {\sectxt};%
+}%
+% Setor 5 separado: cor composta minegreen!60!mineblue (não suportada via variável foreach)
+\colorlet{tmpsec}{minegreen!60!mineblue}%
+\pgfmathsetmacro{\secA}{90 - 5*360/\n}%
+\pgfmathsetmacro{\secB}{90 - 6*360/\n}%
+\pgfmathsetmacro{\secMid}{90 - 5.5*360/\n}%
+\fill[tmpsec!30] (\secA:\innerradius) -- (\secA:\radius) arc(\secA:\secB:\radius) -- (\secB:\innerradius) arc(\secB:\secA:\innerradius) -- cycle;%
+\draw[tmpsec,thick] (\secA:\innerradius) -- (\secA:\radius) arc(\secA:\secB:\radius) -- (\secB:\innerradius) arc(\secB:\secA:\innerradius) -- cycle;%
+\node[font=\tiny\bfseries,align=center,text width=1.8cm] at (\secMid:2.1) {Implanta\c{c}\~{a}o};
+\node[circle,fill=mineblue,text=white,font=\small\bfseries,minimum size=1.5cm] at (0,0) {DADOS};
+% Circular arrow
+\draw[->,thick,minegray,dashed] (0:3.6) arc(0:340:3.6);
+\end{tikzpicture}
+\end{center}
+
+%=============================================================
+\section{Relação com Outras Disciplinas}
+%=============================================================
+
+\begin{center}
+\begin{tikzpicture}
+% Four overlapping circles with Mineração de Dados at the intersection/center
+\begin{scope}[blend mode=multiply,fill opacity=0.3]
+\fill[mineblue] (-1.2,0.8) circle(2.0);   % Estatística
+\fill[mineorange] (1.2,0.8) circle(2.0);   % Machine Learning
+\fill[minegreen] (-1.2,-0.8) circle(2.0);  % Bancos de Dados
+\fill[purple] (1.2,-0.8) circle(2.0);      % Reconhecimento de Padrões
+\end{scope}
+% Labels for each circle
+\node[font=\small\bfseries,color=mineblue] at (-3.0,1.8) {Estatística};
+\node[font=\small\bfseries,color=mineorange] at (3.0,1.8) {Machine Learning};
+\node[font=\small\bfseries,color=minegreen] at (-3.0,-1.8) {Bancos de Dados};
+\node[font=\small\bfseries,color=purple] at (3.0,-1.8) {Rec.\ de Padrões};
+% Center label
+\node[fill=white,rounded corners,font=\small\bfseries\color{minered}] at (0,0) {\begin{tabular}{c}Mineração\\de Dados\end{tabular}};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.3cm}
+
+A Mineração de Dados é, por natureza, uma disciplina interdisciplinar. Sua riqueza deriva exatamente da convergência de métodos e perspectivas de múltiplas áreas:
+
+\textbf{Estatística:} A estatística fornece o arcabouço teórico para a inferência a partir de dados. Conceitos como distribuições de probabilidade, testes de hipótese, regressão, análise de variância e intervalos de confiança são fundamentais para avaliar a validade dos padrões descobertos. A diferença central é que a estatística trabalha com hipóteses formuladas \textit{a priori}, enquanto a mineração de dados é predominantemente exploratória busca padrões sem hipótese prévia.
+
+\textbf{Machine Learning (Aprendizado de Máquina):} O ML fornece os algoritmos centrais da mineração de dados. Árvores de decisão, Redes Neurais, Support Vector Machines (SVM), algoritmos de clustering como K-Means e modelos de ensemble como Random Forest e Gradient Boosting são todos contribuições do ML. A diferença é de foco: o ML enfatiza a generalização e a predição, enquanto a DM enfatiza também a interpretabilidade e a descoberta de conhecimento novo.
+
+\textbf{Bancos de Dados (BD):} Os SGBDs (Sistemas de Gerenciamento de Bancos de Dados) fornecem a infraestrutura para armazenar, indexar e recuperar os dados que serão minerados. SQL, Data Warehousing, modelagem dimensional (esquema estrela e floco de neve) e ETL (\textit{Extract, Transform, Load}) são conceitos de BD essenciais para projetos de DM em escala real.
+
+\textbf{Inteligência Artificial (IA):} A IA clássica contribuiu com sistemas especialistas baseados em regras e lógica fuzzy. A IA moderna especialmente os LLMs (\textit{Large Language Models}) está transformando a mineração de texto e a geração automática de features. O planejamento automático da IA inspira o AutoML.
+
+\textbf{Reconhecimento de Padrões:} Desenvolvido originalmente para processar sinais e imagens, o reconhecimento de padrões contribuiu com técnicas de extração de features, análise de componentes principais (PCA) e métricas de similaridade que são amplamente usadas em tarefas de agrupamento e classificação em DM.
+
+%=============================================================
+\section{Tarefas de Mineração de Dados}
+%=============================================================
+
+As tarefas de mineração de dados podem ser organizadas em duas grandes categorias: \textbf{aprendizado supervisionado} (quando há rótulos nos dados de treinamento) e \textbf{aprendizado não supervisionado} (quando não há rótulos). A tabela a seguir resume as principais tarefas:
+
+\begin{table}[ht]
+\centering
+\caption{Principais tarefas de Mineração de Dados}
+\label{tab:tarefas}
+\footnotesize
+\begin{tabular}{>{\bfseries}p{2.4cm} p{2.0cm} p{2.5cm} p{2.5cm} p{3.5cm}}
+\toprule
+\textbf{Tarefa} & \textbf{Tipo} & \textbf{Objetivo} & \textbf{Exemplos} & \textbf{Algoritmos} \\
+\midrule
+Classificação & Supervisionado & Predizer categoria discreta & Detecção de spam; diagnóstico médico & Árvores de Decisão, SVM, Redes Neurais, Naive Bayes \\
+\midrule
+Regressão & Supervisionado & Predizer valor numérico contínuo & Preço de imóvel; demanda futura & Regressão Linear, Gradient Boosting, XGBoost \\
+\midrule
+Agrupamento (Clustering) & Não Supervisionado & Descobrir grupos naturais & Segmentação de clientes; agrupamento de documentos & K-Means, DBSCAN, Hierarchical Clustering \\
+\midrule
+Regras de Associação & Não Supervisionado & Descobrir regras de co-ocorrência & Análise de cesta de compras; recomendação & Apriori, FP-Growth, Eclat \\
+\midrule
+Detecção de Anomalias & Semi-Supervisionado & Identificar instâncias atípicas & Fraude financeira; falha em equipamentos & Isolation Forest, LOF, One-Class SVM \\
+\midrule
+Sumarização & & Caracterizar e resumir dados & Perfis de usuários; relatórios automáticos & PCA, Estatísticas Descritivas, Autoencoders \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{dicabox}{Escolha da Tarefa Correta}
+A escolha da tarefa de mineração deve ser guiada pela natureza do problema de negócio, não pela familiaridade do analista com um algoritmo específico. Pergunte sempre: ``Tenho rótulos?'' (supervisionado vs.\ não supervisionado), ``Quero predizer uma categoria ou um número?'' (classificação vs.\ regressão) e ``Quero explorar estrutura ou confirmar hipóteses?'' (exploratório vs.\ confirmatório).
+\end{dicabox}
+
+%=============================================================
+\section{Ferramentas para Mineração de Dados}
+%=============================================================
+
+\subsection{Ecossistema Python}
+
+Python tornou-se a linguagem dominante em ciência de dados e mineração de dados, graças à sua sintaxe clara, ecossistema rico e forte suporte da comunidade. A tabela a seguir lista as principais bibliotecas:
+
+\begin{table}[ht]
+\centering
+\caption{Principais bibliotecas Python para Mineração de Dados}
+\label{tab:bibliotecas}
+\small
+\begin{tabular}{>{\bfseries}p{2.5cm} p{4.0cm} p{4.5cm} p{2.0cm}}
+\toprule
+\textbf{Biblioteca} & \textbf{Finalidade} & \textbf{Site} & \textbf{Versão Atual} \\
+\midrule
+NumPy & Computação numérica e arrays multidimensionais & numpy.org & 2.x \\
+\midrule
+Pandas & Manipulação e análise de dados tabulares & pandas.pydata.org & 2.x \\
+\midrule
+Scikit-learn & Aprendizado de máquina clássico e pré-processamento & scikit-learn.org & 1.5+ \\
+\midrule
+Matplotlib & Visualização 2D e criação de gráficos estáticos & matplotlib.org & 3.9+ \\
+\midrule
+Seaborn & Visualização estatística com API de alto nível & seaborn.pydata.org & 0.13+ \\
+\midrule
+Plotly & Visualizações interativas e dashboards & plotly.com & 5.x \\
+\midrule
+SciPy & Algoritmos científicos (otimização, estatística, sinais) & scipy.org & 1.13+ \\
+\midrule
+XGBoost & Gradient Boosting de alta performance & xgboost.readthedocs.io & 2.x \\
+\midrule
+LightGBM & Gradient Boosting eficiente para dados grandes & lightgbm.readthedocs.io & 4.x \\
+\midrule
+PyTorch & Deep Learning e redes neurais & pytorch.org & 2.x \\
+\midrule
+TensorFlow & Deep Learning para pesquisa e produção & tensorflow.org & 2.x \\
+\midrule
+SHAP & Explicabilidade de modelos (Shapley values) & shap.readthedocs.io & 0.45+ \\
+\midrule
+PyCaret & AutoML e comparação de modelos low-code & pycaret.org & 3.x \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ferramentas Especializadas}
+
+Além do ecossistema Python, diversas ferramentas especializadas, muitas com interfaces gráficas, são amplamente utilizadas em ambientes acadêmicos e empresariais:
+
+\textbf{WEKA (Waikato Environment for Knowledge Analysis):} Desenvolvida pela Universidade de Waikato (Nova Zelândia), é uma das ferramentas mais utilizadas em contexto acadêmico. Implementa centenas de algoritmos de classificação, regressão, clustering e seleção de atributos. Possui interface gráfica intuitiva e é excelente para exploração pedagógica.
+
+\textbf{RapidMiner:} Plataforma comercial (com versão community) que oferece uma interface de fluxo de trabalho visual (drag-and-drop) para construção de pipelines de DM. Muito utilizada em empresas que precisam de soluções rápidas sem muito código.
+
+\textbf{KNIME (Konstanz Information Miner):} Plataforma open-source de análise de dados baseada em nós e fluxos de trabalho. Integra-se com Python, R, Spark e diversas fontes de dados. Amplamente adotada na indústria farmacêutica e financeira.
+
+\textbf{Orange:} Ferramenta open-source com interface visual desenvolvida pela Universidade de Ljubljana. Excelente para ensino e exploração visual de dados. Suporta extensões para bioinformática e text mining.
+
+\textbf{H2O.ai:} Plataforma de ML escalável em Java/Python, com suporte a GPU e algoritmos como GLM, GBM, Random Forest, Deep Learning e XGBoost. Possui AutoML integrado e é usada em aplicações enterprise.
+
+\textbf{DataRobot:} Plataforma comercial de AutoML que automatiza todo o pipeline de ciência de dados, desde a ingestão de dados até a implantação do modelo. Voltada para empresas que desejam democratizar o uso de ML sem dependência de cientistas de dados especializados.
+
+%=============================================================
+\section{Estado da Arte (2020--2024)}
+%=============================================================
+
+\begin{estadoartebox}{AutoML -- Aprendizado Automático de Máquina}
+AutoML automatiza o processo de seleção de modelos, engenharia de features e ajuste de hiperparâmetros, tornando o Machine Learning acessível a não especialistas. Os principais sistemas AutoML incluem:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{AutoGluon} (Amazon): foca em benchmarks de alto desempenho para dados tabulares, texto e imagem, com abordagem baseada em ensembles automáticos.
+  \item \textbf{H2O AutoML}: integrado à plataforma H2O, constrói automaticamente um leaderboard de modelos e seleciona o melhor.
+  \item \textbf{TPOT}: usa programação genética para otimizar pipelines de scikit-learn.
+  \item \textbf{Auto-sklearn 2.0}: aplica meta-aprendizado e Bayesian Optimization para seleção de algoritmos.
+  \item \textbf{PyCaret}: biblioteca Python low-code que facilita a comparação e o deploy de modelos.
+\end{itemize}
+\end{estadoartebox}
+
+\begin{estadoartebox}{Explainable AI (XAI) e Interpretabilidade}
+A interpretabilidade tornou-se um requisito crítico em aplicações de alto impacto (crédito, saúde, justiça). As principais abordagens são:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{SHAP} (SHapley Additive exPlanations Lundberg \& Lee, 2017): baseado na teoria dos jogos cooperativos, atribui contribuições individuais a cada feature para uma predição específica. É agnóstico ao modelo e consistente.
+  \item \textbf{LIME} (Local Interpretable Model-agnostic Explanations Ribeiro et al., 2016): aproxima qualquer modelo negro por um modelo interpretável localmente, em torno de uma instância específica.
+  \item \textbf{Grad-CAM}: para modelos de visão computacional, destaca as regiões da imagem que mais influenciaram a predição.
+  \item \textbf{Counterfactual Explanations}: explica ``o que teria que mudar para obter uma predição diferente''.
+\end{itemize}
+\end{estadoartebox}
+
+\begin{estadoartebox}{Federated Learning para Privacidade}
+O aprendizado federado (Federated Learning McMahan et al., 2017) permite treinar modelos sem centralizar dados sensíveis. Os dados permanecem nos dispositivos locais (smartphones, hospitais, bancos), e apenas os gradientes ou atualizações de modelo são compartilhados com um servidor central. É altamente relevante no contexto da LGPD brasileira e do GDPR europeu:
+
+\begin{itemize}[leftmargin=*]
+  \item Aplicações: teclados preditivos (Google Gboard), detecção de fraude bancária distribuída, diagnóstico médico federado.
+  \item Desafios: heterogeneidade dos dados entre clientes, comunicação eficiente, robustez a ataques (envenenamento de gradientes).
+\end{itemize}
+\end{estadoartebox}
+
+\begin{estadoartebox}{Grandes Modelos de Linguagem (LLMs) em DM}
+Os LLMs (\textit{Large Language Models}) como GPT-4, Llama 3 e Gemini estão abrindo novas possibilidades para a mineração de dados:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Text Mining Avançado}: os LLMs superam técnicas tradicionais (TF-IDF, Word2Vec) em tarefas de classificação de texto, análise de sentimentos e extração de entidades.
+  \item \textbf{Data Augmentation}: geração sintética de dados para treinar modelos em domínios com poucos exemplos (\textit{few-shot learning}).
+  \item \textbf{Feature Engineering Automático}: uso de LLMs para gerar descrições semânticas de features e criar embeddings ricos para dados tabulares.
+  \item \textbf{Análise de Dados Conversacional}: ferramentas como Code Interpreter (OpenAI) e Gemini Data Science permitem interagir com dados usando linguagem natural.
+\end{itemize}
+\end{estadoartebox}
+
+%=============================================================
+\section{Considerações Éticas e LGPD}
+%=============================================================
+
+A adoção crescente de técnicas de mineração de dados em contextos de alto impacto social levanta questões éticas fundamentais que todo profissional deve conhecer e considerar:
+
+\textbf{Viés Algorítmico (\textit{Algorithmic Bias}):} Modelos treinados com dados históricos podem perpetuar e amplificar desigualdades existentes. O infame caso do sistema COMPAS (usado na Justiça americana para prever reincidência criminal) mostrou que o modelo era tendencioso contra réus negros. No Brasil, sistemas de crédito e seleção de empregos também podem incorporar vieses relacionados a gênero, raça e classe social se não houver monitoramento adequado.
+
+\textbf{Privacidade de Dados:} A mineração de dados frequentemente envolve dados pessoais sensíveis. É fundamental garantir anonimização eficaz, consentimento informado e minimização do uso de dados.
+
+\textbf{LGPD (Lei Geral de Proteção de Dados Lei 13.709/2018):} A LGPD brasileira, inspirada no GDPR europeu, estabelece direitos dos titulares de dados (acesso, correção, exclusão, portabilidade), obrigações para controladores e operadores, e penalidades severas por descumprimento. Todo projeto de DM com dados pessoais deve estar em conformidade com a LGPD.
+
+\textbf{Fairness em ML:} Diversas métricas de equidade foram propostas para avaliar a imparcialidade de modelos: \textit{demographic parity}, \textit{equalized odds}, \textit{individual fairness}. É importante notar que algumas dessas métricas são matematicamente incompatíveis entre si (impossibilidade de Fairness).
+
+\textbf{Transparência Algorítmica:} O ``direito de explicação'' (presente na LGPD e no GDPR) exige que decisões automatizadas significativas possam ser explicadas aos titulares de dados afetados. Isso impõe restrições ao uso de modelos caixa-preta em contextos de alto impacto.
+
+\textbf{Responsabilidade (\textit{Accountability}):} Quando um modelo de DM cause dano, quem é responsável o desenvolvedor do algoritmo, a empresa que o implementou ou o usuário que tomou a decisão final? A ausência de frameworks claros de responsabilidade é uma lacuna ética e legal importante.
+
+\begin{atencaobox}{Atenção: Ética não é Opcional}
+A ética em Mineração de Dados não é um tema teórico distante da prática profissional ela afeta diretamente projetos reais. Vieses em dados de treino podem causar discriminação sistemática. Ignorar a LGPD pode resultar em multas de até 2\% do faturamento da empresa (limite de R\$ 50 milhões por infração). Profissionais de dados têm responsabilidade ativa na criação de sistemas justos e transparentes.
+\end{atencaobox}
+
+%=============================================================
+\section{Exercícios}
+%=============================================================
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Exercício \arabic*.}]
+
+  \item \textbf{(Conceitual)} Distinga entre Business Intelligence, Estatística Clássica e Mineração de Dados, apresentando ao menos dois exemplos práticos de aplicação para cada área. Em quais situações os três podem ser usados de forma complementar?
+
+  \item \textbf{(Aplicação)} Para cada aplicação abaixo, identifique a tarefa de mineração de dados mais adequada (classificação, regressão, agrupamento, regras de associação, detecção de anomalias ou sumarização) e justifique sua escolha:
+  \begin{enumerate}[label=(\alph*)]
+    \item Sistema de recomendação de músicas do Spotify
+    \item Detecção de transações fraudulentas em cartão de crédito
+    \item Agrupamento automático de notícias em categorias
+    \item Previsão de demanda de produtos em e-commerce
+  \end{enumerate}
+
+  \item \textbf{(CRISP-DM)} Um banco deseja criar um modelo para prever a probabilidade de inadimplência de solicitantes de crédito pessoal. Descreva cada fase do CRISP-DM aplicada a este cenário, incluindo: quais dados seriam coletados, como o sucesso seria medido, quais algoritmos seriam testados e quais riscos éticos precisam ser considerados.
+
+  \item \textbf{(Pesquisa)} Pesquise e apresente um caso real de uso de mineração de dados em sua área de interesse (saúde, finanças, agronegócio, educação, etc.). Descreva: o problema abordado, os dados utilizados, a técnica empregada e os resultados obtidos. Cite as fontes.
+
+  \item \textbf{(Prático)} Utilizando Python e scikit-learn, carregue o dataset \texttt{iris}, realize análise exploratória básica (shape, head, describe, value\_counts das classes) e aplique 3 classificadores diferentes (árvore de decisão, K-NN e Naive Bayes). Compare os resultados com cross-validation de 5 folds e apresente as métricas de acurácia, precisão, recall e F1-score.
+
+  \item \textbf{(Ética)} Identifique pelo menos 3 riscos éticos que podem surgir em sistemas de mineração de dados utilizados em processos seletivos de emprego. Para cada risco, proponha uma medida de mitigação técnica e uma medida organizacional.
+
+  \item \textbf{(Estado da Arte)} Pesquise sobre o algoritmo XGBoost (Chen \& Guestrin, 2016). Por que ele é considerado estado da arte para dados tabulares? Descreva suas principais vantagens em relação a outros algoritmos de gradient boosting e apresente um exemplo de código Python demonstrando seu uso.
+
+  \item \textbf{(Crítica)} Descreva uma situação concreta (real ou hipotética) onde a aplicação de mineração de dados pode ser prejudicial à sociedade ou a indivíduos. Analise o caso sob as perspectivas técnica (o que deu errado no modelo?), ética (quais valores foram violados?) e legal (houve violação da LGPD ou de outras normas?). Proponha como os riscos poderiam ser mitigados.
+
+\end{enumerate}
+
+%=============================================================
+\section{Referências Bibliográficas}
+%=============================================================
+
+\begin{thebibliography}{99}
+
+\bibitem{fayyad1996}
+FAYYAD, U.; PIATETSKY-SHAPIRO, G.; SMYTH, P. From Data Mining to Knowledge Discovery in Databases. \textit{AI Magazine}, v. 17, n. 3, p. 37--54, 1996.
+
+\bibitem{han2011}
+HAN, J.; PEI, J.; KAMBER, M. \textit{Data Mining: Concepts and Techniques}. 3. ed. San Francisco: Morgan Kaufmann, 2011.
+
+\bibitem{witten2016}
+WITTEN, I. H. et al. \textit{Data Mining: Practical Machine Learning Tools and Techniques}. 4. ed. Burlington: Morgan Kaufmann, 2016.
+
+\bibitem{wirth2000}
+WIRTH, R.; HIPP, J. CRISP-DM: Towards a Standard Process Model for Data Mining. In: \textit{Proceedings of the 4th International Conference on the Practical Applications of Knowledge Discovery and Data Mining}, 2000, p. 29--39.
+
+\bibitem{breiman2001}
+BREIMAN, L. Random Forests. \textit{Machine Learning}, v. 45, n. 1, p. 5--32, 2001.
+
+\bibitem{chen2016}
+CHEN, T.; GUESTRIN, C. XGBoost: A Scalable Tree Boosting System. In: \textit{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 2016, p. 785--794.
+
+\bibitem{lundberg2017}
+LUNDBERG, S. M.; LEE, S.-I. A Unified Approach to Interpreting Model Predictions. \textit{Advances in Neural Information Processing Systems}, v. 30, 2017.
+
+\bibitem{lecun2015}
+LECUN, Y.; BENGIO, Y.; HINTON, G. Deep Learning. \textit{Nature}, v. 521, p. 436--444, 2015.
+
+\bibitem{goodfellow2016}
+GOODFELLOW, I.; BENGIO, Y.; COURVILLE, A. \textit{Deep Learning}. Cambridge: MIT Press, 2016.
+
+\bibitem{sculley2015}
+SCULLEY, D. et al. Hidden Technical Debt in Machine Learning Systems. \textit{Advances in Neural Information Processing Systems}, v. 28, 2015.
+
+\bibitem{mitchell1997}
+MITCHELL, T. M. \textit{Machine Learning}. New York: McGraw-Hill, 1997.
+
+\end{thebibliography}
+
+\end{document}

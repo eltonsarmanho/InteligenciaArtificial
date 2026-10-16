@@ -1,0 +1,781 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm,top=3cm,bottom=3cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning,fit,backgrounds,calc,shadows.blur,decorations.pathmorphing,mindmap,trees,patterns,decorations.text}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{fontawesome5}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable,skins,theorems}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\setlength{\headheight}{14pt}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{caption}
+
+% Colors
+\definecolor{mineblue}{RGB}{0,90,180}
+\definecolor{mineorange}{RGB}{230,115,0}
+\definecolor{minegreen}{RGB}{34,139,34}
+\definecolor{minered}{RGB}{180,20,40}
+\definecolor{minegray}{RGB}{100,100,100}
+\definecolor{codebg}{RGB}{250,250,250}
+\definecolor{headerbg}{RGB}{0,90,180}
+
+% Custom tcolorbox environments
+\newtcolorbox{definicaobox}[1]{title={\faIcon{book} #1},colback=blue!4!white,colframe=mineblue,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{exemplobox}[1]{title={\faIcon{lightbulb} #1},colback=orange!4!white,colframe=mineorange,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{dicabox}[1]{title={\faIcon{info-circle} #1},colback=green!4!white,colframe=minegreen,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{atencaobox}[1]{title={\faIcon{exclamation-triangle} #1},colback=red!4!white,colframe=minered,fonttitle=\bfseries,breakable,enhanced}
+\newtcolorbox{estadoartebox}[1]{title={\faIcon{rocket} #1},colback=purple!4!white,colframe=purple!60!black,fonttitle=\bfseries,breakable,enhanced}
+
+% Python listings style
+\lstdefinestyle{mypython}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{minegray}\itshape,
+    keywordstyle=\color{mineblue}\bfseries,
+    stringstyle=\color{minegreen},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{minegray!40},
+    numbers=left,
+    numberstyle=\tiny\color{minegray},
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+\lstset{style=mypython}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \textcolor{mineblue}{\textbf{Mineração de Dados}}}
+\fancyhead[R]{\small Módulo 2: Pré-processamento de Dados}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title formatting
+\titleformat{\section}{\large\bfseries\color{mineblue}}{\thesection}{0.8em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{mineorange}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\small\bfseries\color{minegray}}{\thesubsubsection}{0.8em}{}
+
+\title{
+\begin{tcolorbox}[colback=mineblue,coltext=white,colframe=mineblue,width=\textwidth,sharp corners]
+\centering
+\LARGE \faIcon{database} Mineração de Dados\\[4pt]
+\Large Módulo 2: Pré-processamento de Dados\\[6pt]
+\end{tcolorbox}
+}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\tableofcontents
+\newpage
+
+%=============================================================
+\section{Objetivos de Aprendizagem}
+%=============================================================
+
+Ao final deste módulo, o estudante será capaz de:
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+  \item \faIcon{check-circle}~\textbf{Compreender} os conceitos de qualidade de dados e suas seis dimensões principais (acurácia, completude, consistência, temporalidade, validade e unicidade), reconhecendo sua importância no processo KDD.
+
+  \item \faIcon{check-circle}~\textbf{Distinguir} os tipos de dados (escalas nominal, ordinal, intervalar e razão; dados estruturados e não estruturados; séries temporais e dados espaciais) e selecionar as técnicas de pré-processamento adequadas para cada tipo.
+
+  \item \faIcon{check-circle}~\textbf{Aplicar} técnicas de tratamento de dados ausentes (imputação pela média/mediana, KNN, MICE) identificando o mecanismo de ausência (MCAR, MAR, MNAR) em cada situação.
+
+  \item \faIcon{check-circle}~\textbf{Identificar} e tratar outliers usando métodos univariados (Z-score, IQR) e multivariados (Isolation Forest, LOF, One-Class SVM), escolhendo a estratégia de tratamento mais adequada.
+
+  \item \faIcon{check-circle}~\textbf{Aplicar} técnicas de normalização e escalonamento (Min-Max, Z-score, Robust Scaler) justificando a escolha com base nas características dos dados e no algoritmo a ser utilizado.
+
+  \item \faIcon{check-circle}~\textbf{Construir} pipelines de seleção de atributos usando métodos de filtro (correlação, informação mútua), wrapper (RFE) e embutidos (LASSO, importância em árvores).
+
+  \item \faIcon{check-circle}~\textbf{Avaliar} estratégias de redução de dimensionalidade (PCA, t-SNE, UMAP) e balanceamento de classes (SMOTE, ADASYN), selecionando a abordagem mais adequada ao problema.
+
+  \item \faIcon{check-circle}~\textbf{Construir} pipelines completos de pré-processamento com sklearn Pipeline e ColumnTransformer, garantindo que transformações sejam aplicadas corretamente em dados de treino e teste.
+\end{enumerate}
+
+%=============================================================
+\section{Qualidade de Dados}
+%=============================================================
+
+O pré-processamento de dados é frequentemente citado como a etapa mais crítica e mais demorada de um projeto de mineração de dados. Pesquisas indicam que 60 a 80\% do esforço total de um projeto de ciência de dados é dedicado à limpeza e preparação dos dados. Dados de baixa qualidade não apenas comprometem o desempenho dos modelos, mas podem levar a conclusões completamente equivocadas e a decisões de negócio prejudiciais.
+
+\begin{definicaobox}{Qualidade de Dados}
+Qualidade de dados é a medida em que os dados satisfazem os requisitos de uso para os quais foram coletados. Dados de alta qualidade são aqueles que representam fielmente a realidade que descrevem e que podem ser usados de forma confiável para as análises pretendidas.
+\end{definicaobox}
+
+\begin{dicabox}{Regra 80-20 do Pré-processamento}
+Na prática de projetos de ciência de dados, a \textbf{regra 80-20} é um consenso informal: 80\% do tempo é gasto em pré-processamento e apenas 20\% em modelagem propriamente dita. Isso reflete a realidade de dados do mundo real, que quase nunca chegam limpos e estruturados. Investir bem nesta etapa é fundamental para o sucesso do projeto.
+\end{dicabox}
+
+As seis dimensões principais de qualidade de dados são:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Acurácia:} Os dados refletem corretamente a realidade? Exemplo de problema: uma base de clientes com CEP ``99999-999'' (inválido) ou data de nascimento ``01/01/1900'' (implausível).
+
+  \item \textbf{Completude:} Todos os dados necessários estão presentes? Exemplo: formulários de cadastro com campo ``renda mensal'' deixado em branco por 40\% dos respondentes.
+
+  \item \textbf{Consistência:} Os dados são coerentes entre si e com outras fontes? Exemplo: um registro indica que o cliente é do sexo feminino mas o pronome usado em outros campos é masculino; ou a data de entrega é anterior à data de pedido.
+
+  \item \textbf{Temporalidade:} Os dados estão atualizados? Exemplo: endereços de clientes coletados há 5 anos podem estar desatualizados; preços de produtos sem data de vigência.
+
+  \item \textbf{Validade:} Os dados estão dentro dos domínios e formatos esperados? Exemplo: campo ``idade'' com valor negativo ou maior que 150; CPF com 11 dígitos mas matematicamente inválido.
+
+  \item \textbf{Unicidade:} Não há duplicatas indevidas? Exemplo: o mesmo cliente cadastrado duas vezes com pequenas variações no nome (``João Silva'' e ``Joao Silva''); registros idênticos em tabelas de transações.
+\end{enumerate}
+
+% O gráfico a seguir (radar chart) exemplifica o perfil de qualidade de um dataset hipotético:
+
+% \vspace{0.4cm}
+% \begin{center}
+% \begin{tikzpicture}
+% \def\n{6}
+% \def\maxval{10}
+% \def\scale{1.5}
+% % Draw radial lines
+% \foreach \i in {1,...,\n}{
+%   \draw[minegray!40] (0,0) -- ({(\i-1)*360/\n}:\scale*\maxval/10*7);
+% }
+% % Draw concentric polygons (grids)
+% \foreach \r in {2,4,6,8,10}{
+%   \draw[minegray!30] \foreach \i in {1,...,\n}{ -- ({(\i-1)*360/\n}:\scale*\r/10*7)} -- cycle;
+% }
+% % Plot sample values (representing quality scores)
+% \fill[mineblue!30,draw=mineblue,line width=1.5pt]
+%   (90:{\scale*8/10*7}) --
+%   (30:{\scale*6/10*7}) --
+%   (-30:{\scale*9/10*7}) --
+%   (-90:{\scale*7/10*7}) --
+%   (-150:{\scale*5/10*7}) --
+%   (150:{\scale*8/10*7}) -- cycle;
+% % Dot markers on vertices
+% \foreach \angle/\val in {90/8, 30/6, -30/9, -90/7, -150/5, 150/8}{
+%   \fill[mineblue] (\angle:{\scale*\val/10*7}) circle(3pt);
+% }
+% % Labels on each axis
+% \node[font=\small\bfseries,above] at (90:{\scale*\maxval/10*7+0.45}) {Acurácia (8)};
+% \node[font=\small\bfseries,right] at (30:{\scale*\maxval/10*7+0.45}) {Completude (6)};
+% \node[font=\small\bfseries,right] at (-30:{\scale*\maxval/10*7+0.45}) {Consistência (9)};
+% \node[font=\small\bfseries,below] at (-90:{\scale*\maxval/10*7+0.45}) {Temporalidade (7)};
+% \node[font=\small\bfseries,left] at (-150:{\scale*\maxval/10*7+0.45}) {Validade (5)};
+% \node[font=\small\bfseries,left] at (150:{\scale*\maxval/10*7+0.45}) {Unicidade (8)};
+% % Scale labels
+% \node[font=\tiny,minegray] at (0:{\scale*2/10*7}) {2};
+% \node[font=\tiny,minegray] at (0:{\scale*4/10*7}) {4};
+% \node[font=\tiny,minegray] at (0:{\scale*6/10*7}) {6};
+% \node[font=\tiny,minegray] at (0:{\scale*8/10*7}) {8};
+% \node[font=\tiny,minegray] at (0:{\scale*10/10*7}) {10};
+% \end{tikzpicture}
+% \end{center}
+
+%=============================================================
+\section{Tipos de Dados}
+%=============================================================
+
+A classificação dos tipos de dados é fundamental para escolher as técnicas de pré-processamento e os algoritmos adequados. A escala de medida proposta por Stevens (1946) ainda é o referencial mais utilizado:
+
+\begin{table}[ht]
+\centering
+\caption{Escalas de medida de Stevens (1946) e suas características}
+\label{tab:escalas}
+\small
+\begin{tabular}{>{\bfseries}p{2.0cm} p{3.5cm} p{3.5cm} p{4.0cm}}
+\toprule
+\textbf{Escala} & \textbf{Propriedades} & \textbf{Operações Válidas} & \textbf{Exemplos} \\
+\midrule
+Nominal & Apenas categorias, sem ordem & Igualdade, contagem, moda & Cor dos olhos, Estado civil, Tipo sanguíneo, CEP \\
+\midrule
+Ordinal & Categorias com ordem, mas intervalos desiguais & Comparação de ordem, mediana, percentis & Grau de satisfação (1--5), Nível de escolaridade, Classificação em corrida \\
+\midrule
+Intervalar & Intervalos iguais, mas zero é arbitrário & Adição, subtração, média, desvio padrão & Temperatura em Celsius, Ano calendário, Escores padronizados \\
+\midrule
+Razão & Intervalos iguais e zero absoluto & Todas as operações, incluindo razões e multiplicações & Peso (kg), Altura (cm), Renda (R\$), Tempo (s) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Além das escalas de medida, é importante distinguir:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Dados contínuos vs.\ discretos:} Contínuos assumem qualquer valor em um intervalo (altura, temperatura); discretos assumem valores enumeráveis (número de filhos, contagem de cliques).
+
+  \item \textbf{Dados estruturados vs.\ não estruturados:} Estruturados seguem um esquema tabular rígido (planilhas, tabelas SQL); não estruturados incluem texto livre, imagens, áudio e vídeo, requerem extração de features antes da mineração tradicional.
+
+  \item \textbf{Séries temporais:} Sequências ordenadas no tempo. Exigem técnicas especiais (janelas deslizantes, decomposição de tendência e sazonalidade, modelos ARIMA, LSTM).
+
+  \item \textbf{Dados espaciais:} Dados com componente geográfico (coordenadas, polígonos). Requerem métricas de distância geodésica e técnicas de geostatística.
+
+  \item \textbf{Dados de texto:} Requerem pré-processamento especializado (tokenização, stemming, lematização, remoção de stopwords, TF-IDF, embeddings).
+\end{itemize}
+
+%=============================================================
+\section{Dados Ausentes (Missing Values)}
+%=============================================================
+
+Dados ausentes são um problema ubíquo em aplicações reais. A abordagem correta para tratar valores ausentes depende fundamentalmente do \textit{mecanismo de ausência}, que determina se e como a ausência é relacionada aos dados observados e não observados.
+
+\subsection{Mecanismos de Ausência}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{MCAR} (\textit{Missing Completely At Random}): A probabilidade de um valor estar ausente não depende de nenhum dado observado ou não observado. Exemplo: um sensor de temperatura falha aleatoriamente a cada 1000 medições, independentemente do valor medido. Neste caso, a remoção de registros com dados ausentes não introduz viés, mas reduz o poder estatístico.
+
+  \item \textbf{MAR} (\textit{Missing At Random}): A probabilidade de ausência depende de outros dados observados, mas não do valor ausente em si. Exemplo: respondentes com renda mais alta tendem a não informar a renda (mas a ausência depende de outras características observadas, como nível de escolaridade). Técnicas de imputação múltipla (como MICE) são adequadas neste caso.
+
+  \item \textbf{MNAR} (\textit{Missing Not At Random}): A probabilidade de ausência depende do próprio valor ausente. Exemplo: pacientes com valores muito altos de pressão arterial tendem a não comparecer às consultas (e portanto não têm a medição registrada). Este é o cenário mais difícil, qualquer imputação sem modelagem explícita do mecanismo de ausência introduz viés.
+\end{itemize}
+
+\begin{atencaobox}{Importância do Diagnóstico do Mecanismo}
+A escolha da estratégia de tratamento de dados ausentes \textbf{deve ser precedida} do diagnóstico do mecanismo de ausência. Remover registros com dados ausentes quando o mecanismo é MAR ou MNAR introduz viés sistemático nos modelos. Testes estatísticos como Little's MCAR test podem auxiliar no diagnóstico.
+\end{atencaobox}
+
+\subsection{Técnicas de Imputação}
+
+\subsubsection{Imputação pela Média, Mediana ou Moda}
+
+A imputação pela estatística central substitui cada valor ausente pela média (para variáveis numéricas simétricas), mediana (para numéricas assimétricas ou com outliers) ou moda (para categóricas).
+
+\[
+\hat{x}_i = \begin{cases} \bar{x} & \text{(média, se distribuição simétrica)} \\ \text{mediana}(x) & \text{(se distribuição assimétrica)} \\ \text{moda}(x) & \text{(se variável categórica)} \end{cases}
+\]
+
+\textbf{Vantagens:} Simples, rápido, fácil de implementar.\\
+\textbf{Desvantagens:} Subestima a variância, distorce correlações entre variáveis, trata todos os ausentes de forma idêntica independentemente do contexto.\\
+\textbf{Quando usar:} Poucos valores ausentes ($< 5\%$), mecanismo MCAR, como baseline comparativo.
+
+\subsubsection{Hot-Deck Imputation}
+
+Cada valor ausente é substituído pelo valor de um doador, uma instância similar selecionada da mesma base de dados. A similaridade pode ser definida por vizinhança geográfica, faixa etária, ou outros critérios de domínio.
+
+\textbf{Vantagens:} Preserva distribuições e relações entre variáveis melhor que a imputação pela média.\\
+\textbf{Desvantagens:} Pode ser computacionalmente custoso; a definição de ``similar'' é subjetiva.
+
+\subsubsection{Imputação por KNN}
+
+O KNN Imputer substitui cada valor ausente pela média ponderada dos $k$ vizinhos mais próximos no espaço de features observadas.
+
+\begin{algorithm}[H]
+\caption{KNN Imputation}
+\SetAlgoLined
+\KwIn{Dataset $X$ com valores ausentes, número de vizinhos $k$}
+\KwOut{Dataset $X'$ com valores imputados}
+\For{cada instância $x_i$ com valores ausentes}{
+  Calcular distância $d(x_i, x_j)$ apenas nas features \textbf{observadas} em ambas as instâncias\;
+  Selecionar os $k$ vizinhos mais próximos $N_k(i) = \{x_{j_1}, \ldots, x_{j_k}\}$\;
+  \For{cada feature $f$ ausente em $x_i$}{
+    $\hat{x}_{i,f} \leftarrow \frac{\sum_{j \in N_k(i)} w_j \cdot x_{j,f}}{\sum_{j \in N_k(i)} w_j}$ onde $w_j = 1/d(x_i, x_j)$\;
+  }
+}
+\Return $X'$\;
+\end{algorithm}
+
+\textbf{Vantagens:} Captura relações locais entre instâncias; preserva a estrutura dos dados melhor que imputação global.\\
+\textbf{Desvantagens:} Sensível à escala das features (normalizar antes!); custo $O(n^2)$; não funciona bem com dados muito esparsos.
+
+\subsubsection{Imputação Iterativa -- MICE}
+
+O MICE (\textit{Multiple Imputation by Chained Equations}, Van Buuren, 2018) trata a imputação como um problema de regressão: cada coluna com ausentes é modelada como variável dependente, usando as outras colunas como preditores. O processo é iterado até a convergência.
+
+\textbf{Vantagens:} Modela relações multivariadas complexas; produz estimativas de incerteza; robusto para MAR.\\
+\textbf{Desvantagens:} Computacionalmente intensivo; assumem relações paramétricas (versão básica).
+
+\subsubsection{Imputação por Modelos Baseados em ML}
+
+MissForest (Stekhoven \& Buhlmann, 2012) usa Random Forests para imputar: itera entre todas as colunas, treinando uma floresta por coluna e usando as predições como imputações. GAIN (Yoon et al., 2018) usa GANs para imputação. São as abordagens com melhor desempenho em geral, especialmente com dados complexos.
+
+A figura a seguir ilustra os três padrões de ausência (MCAR, MAR, MNAR) em uma grade de dados:
+
+\vspace{0.4cm}
+\begin{center}
+\begin{tikzpicture}[
+  cell/.style={rectangle,minimum width=0.5cm,minimum height=0.5cm,
+               draw=minegray!50,inner sep=0pt}]
+
+  % ── Títulos (centralizados em cada grade) ─────────────────────
+  % Grade 6×5, célula 0.5cm: centro da col 1 = 0.25, col 6 = 2.75 → centro grade = 1.5
+  % Offset MAR = +3.5, Offset MNAR = +7.0
+  \node[font=\small\bfseries,color=mineblue]   at (1.5, 3.0)  {MCAR};
+  \node[font=\small\bfseries,color=mineorange] at (5.0, 3.0)  {MAR};
+  \node[font=\small\bfseries,color=minered]    at (8.5, 3.0)  {MNAR};
+
+  % ── Grade MCAR: ausências completamente aleatórias ────────────
+  \foreach \c in {1,...,6}{
+    \foreach \r in {1,...,5}{
+      \node[cell,fill=mineblue!15] at ({(\c-0.5)*0.5},{(\r-0.5)*0.5}) {};
+    }
+  }
+  % 6 células ausentes em posições aleatórias dentro da grade MCAR
+  \node[cell,fill=minered!60] at (0.25,1.75) {};
+  \node[cell,fill=minered!60] at (1.25,2.25) {};
+  \node[cell,fill=minered!60] at (2.75,0.25) {};
+  \node[cell,fill=minered!60] at (2.25,1.75) {};
+  \node[cell,fill=minered!60] at (0.75,0.75) {};
+  \node[cell,fill=minered!60] at (1.75,1.25) {};
+  \node[font=\tiny,align=center,text width=3.2cm] at (1.5,-0.4)
+    {Ausências distribuídas\\aleatoriamente};
+
+  % ── Grade MAR: ausências dependem de variável observada ───────
+  \foreach \c in {1,...,6}{
+    \foreach \r in {1,...,5}{
+      \node[cell,fill=mineorange!15] at ({(\c-0.5)*0.5+3.5},{(\r-0.5)*0.5}) {};
+    }
+  }
+  % Cols 5-6 (x=5.75, 6.25), linhas 3-5 (y=1.25, 1.75, 2.25) ausentes
+  \node[cell,fill=minered!60] at (5.75,1.25) {};
+  \node[cell,fill=minered!60] at (6.25,1.25) {};
+  \node[cell,fill=minered!60] at (5.75,1.75) {};
+  \node[cell,fill=minered!60] at (6.25,1.75) {};
+  \node[cell,fill=minered!60] at (5.75,2.25) {};
+  \node[cell,fill=minered!60] at (6.25,2.25) {};
+  \node[font=\tiny,align=center,text width=3.2cm] at (5.0,-0.4)
+    {Ausências dependem de\\outras variáveis observadas};
+
+  % ── Grade MNAR: ausências nos valores mais altos ──────────────
+  \foreach \c in {1,...,6}{
+    \foreach \r in {1,...,5}{
+      \node[cell,fill=minered!10] at ({(\c-0.5)*0.5+7.0},{(\r-0.5)*0.5}) {};
+    }
+  }
+  % Col 6 (x=9.75), linhas 3-5 (y=1.25,1.75,2.25): valores altos ausentes
+  \node[cell,fill=minered!60] at (9.75,1.25) {};
+  \node[cell,fill=minered!60] at (9.75,1.75) {};
+  \node[cell,fill=minered!60] at (9.75,2.25) {};
+  % Rótulos de intensidade ao lado da col 6 do MNAR
+  \node[font=\tiny\itshape,anchor=west] at (10.1,0.25) {baixo};
+  \node[font=\tiny\itshape,anchor=west] at (10.1,0.75) {m\'{e}dio};
+  \node[font=\tiny\itshape,anchor=west] at (10.1,1.25) {alto};
+  \node[font=\tiny\itshape,anchor=west] at (10.1,1.75) {muito alto};
+  \node[font=\tiny\itshape,anchor=west] at (10.1,2.25) {m\'{a}ximo};
+  \node[font=\tiny,align=center,text width=3.2cm] at (8.5,-0.4)
+    {Ausências nos maiores\\valores (sistêmico)};
+
+  % ── Legenda centralizada sob as três grades ───────────────────
+  \node[cell,fill=minered!60]  at (3.6,-1.0) {};
+  \node[font=\tiny,anchor=west] at (3.85,-1.0) {-- Valor ausente};
+  \node[cell,fill=mineblue!15] at (6.1,-1.0) {};
+  \node[font=\tiny,anchor=west] at (6.35,-1.0) {-- Valor presente};
+\end{tikzpicture}
+\end{center}
+
+%=============================================================
+\section{Detecção e Tratamento de Outliers}
+%=============================================================
+
+Outliers são observações que se desviam significativamente do padrão esperado nos dados. Eles podem representar erros de coleta, medição ou inserção de dados, mas também podem ser observações genuínas e informativas (como transações fraudulentas ou eventos raros clinicamente relevantes). A estratégia de tratamento deve ser guiada pela natureza do problema.
+
+\subsection{Métodos Univariados}
+
+\subsubsection{Z-Score}
+
+O Z-score mede quantos desvios padrão uma observação está afastada da média:
+\[
+z_i = \frac{x_i - \mu}{\sigma}
+\]
+Considera-se outlier quando $|z_i| > 3$ (equivalente a estar fora do intervalo $\mu \pm 3\sigma$, que cobre 99,7\% de uma distribuição normal). Sensível a outliers extremos que distorcem $\mu$ e $\sigma$.
+
+\subsubsection{IQR (Interquartile Range)}
+
+O método IQR é mais robusto, pois usa medidas de posição resistentes:
+\[
+IQR = Q_3 - Q_1
+\]
+\[
+\text{Outlier se: } x_i < Q_1 - 1.5 \cdot IQR \quad \text{ou} \quad x_i > Q_3 + 1.5 \cdot IQR
+\]
+O fator 1.5 é o critério de Tukey (1977). Usando 3.0 (critério mais restritivo) identifica apenas outliers extremos.
+
+O boxplot a seguir ilustra os elementos do método IQR:
+
+\vspace{0.4cm}
+\begin{center}
+\begin{tikzpicture}[xscale=1.2]
+  % Caixa principal (Q1 a Q3)
+  \draw[thick,mineblue,fill=mineblue!20] (3.0,0.5) rectangle (6.5,1.5);
+  % Mediana
+  \draw[thick,minered,line width=2pt] (5.0,0.5) -- (5.0,1.5);
+  % Whiskers
+  \draw[thick,mineblue] (3.0,1.0) -- (1.5,1.0);  % whisker inferior
+  \draw[thick,mineblue] (6.5,1.0) -- (8.5,1.0);  % whisker superior
+  % Caps dos whiskers
+  \draw[thick,mineblue] (1.5,0.7) -- (1.5,1.3);
+  \draw[thick,mineblue] (8.5,0.7) -- (8.5,1.3);
+  % Outliers
+  \fill[minered] (0.5,1.0) circle(4pt);
+  \fill[minered] (10.0,1.0) circle(4pt);
+  \fill[minered] (10.8,1.0) circle(4pt);
+  % Labels
+  \node[font=\small,below] at (3.0,0.5) {$Q_1$};
+  \node[font=\small,below] at (5.0,0.5) {$Q_2$ (Med.)};
+  \node[font=\small,below] at (6.5,0.5) {$Q_3$};
+  \node[font=\tiny,below] at (1.5,0.5) {$Q_1 - 1.5 \cdot IQR$};
+  \node[font=\tiny,below] at (8.5,0.5) {$Q_3 + 1.5 \cdot IQR$};
+  \node[font=\small,minered,below] at (0.5,0.5) {Outlier};
+  \node[font=\small,minered,below] at (10.4,0.5) {Outliers};
+  % IQR brace
+  \draw[<->,minegreen,thick] (3.0,2.0) -- (6.5,2.0) node[midway,above,font=\small] {$IQR = Q_3 - Q_1$};
+\end{tikzpicture}
+\end{center}
+
+\subsubsection{Z-Score Modificado (MAD)}
+
+Usa a Mediana Absolute Deviation (MAD) em vez de $\sigma$, sendo extremamente robusto:
+\[
+MAD = \text{mediana}(|x_i - \text{mediana}(x)|)
+\]
+\[
+M_i = \frac{0.6745 \cdot (x_i - \text{mediana}(x))}{MAD}
+\]
+Outlier se $|M_i| > 3.5$.
+
+
+
+\subsection{Métodos Multivariados e Baseados em ML}
+
+\textbf{Distância de Mahalanobis:} Estende o Z-score para múltiplas dimensões, considerando a correlação entre variáveis:
+$D_M(x) = \sqrt{(x - \mu)^T \Sigma^{-1} (x - \mu)}$. Sensível quando $n \gg p$.
+
+\textbf{Isolation Forest} (Liu et al., 2008): Isola outliers construindo árvores aleatórias. Anomalias são isoladas em menos divisões, resultando em caminhos médios mais curtos. Eficiente e eficaz para dados de alta dimensionalidade.
+
+\textbf{LOF} (\textit{Local Outlier Factor} - Breunig et al., 2000): Mede a densidade local de cada ponto em comparação com seus vizinhos. Pontos em regiões de baixa densidade relativa recebem LOF alto. Detecta outliers locais que métodos globais perdem.
+
+\textbf{One-Class SVM:} Aprende a fronteira da região de normalidade no espaço de features. Pontos fora da fronteira são classificados como anomalias.
+
+\textbf{COPOD} (\textit{Copula-based Outlier Detection}): Usa cópulas para modelar dependências multivariadas sem assumir normalidade. Computacionalmente eficiente.
+
+\subsection{Como Tratar Outliers}
+
+\begin{table}[ht]
+\centering
+\caption{Estratégias de tratamento de outliers}
+\label{tab:outliers}
+\small
+\begin{tabular}{>{\bfseries}p{2.8cm} p{3.5cm} p{3.5cm} p{3.2cm}}
+\toprule
+\textbf{Estratégia} & \textbf{Descrição} & \textbf{Quando usar} & \textbf{Cuidado} \\
+\midrule
+Remoção & Excluir registros com outliers & Erros claros de coleta; modelo sensível a extremos & Pode perder dados raros mas legítimos \\
+\midrule
+Winsorização & Substituir por $Q_1 - 1.5 \cdot IQR$ ou $Q_3 + 1.5 \cdot IQR$ & Quando os extremos são improváveis mas não impossíveis & Distorce a distribuição original \\
+\midrule
+Transformação & Log, raiz quadrada, Box-Cox & Distribuição com cauda longa & Dificulta a interpretação dos coeficientes \\
+\midrule
+Manter & Não tratar & Outliers genuínos (fraude, doença rara) & Algoritmos sensíveis (KNN, SVM linear) podem ser prejudicados \\
+\midrule
+Modelar separadamente & Tratar outliers como classe separada & Detecção de anomalias & Requer volume suficiente de outliers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=============================================================
+\section{Normalização e Escalonamento}
+%=============================================================
+
+A maioria dos algoritmos de aprendizado de máquina é sensível à escala das features. Distâncias euclidianas (usadas em KNN, K-Means, SVM), regularizações (LASSO, Ridge) e gradientes (Redes Neurais) são afetados quando features têm escalas muito diferentes. O escalonamento é fundamental para garantir que todas as features contribuam equitativamente.
+
+\subsubsection{Min-Max Normalization}
+\[
+x'_i = \frac{x_i - x_{min}}{x_{max} - x_{min}} \in [0, 1]
+\]
+Mapeia todos os valores para o intervalo $[0, 1]$ (ou $[a, b]$ com ajuste). Muito sensível a outliers, que ``comprimem'' todos os outros valores.
+
+\subsubsection{Z-Score Standardization}
+\[
+x'_i = \frac{x_i - \mu}{\sigma}
+\]
+Centraliza os dados com média 0 e desvio padrão 1. Assume que a distribuição é aproximadamente normal. O método mais usado como padrão.
+
+\subsubsection{Robust Scaler}
+\[
+x'_i = \frac{x_i - Q_2}{IQR}
+\]
+Usa a mediana ($Q_2$) e o IQR. Robusto a outliers, pois não usa a média nem o desvio padrão.
+
+\subsubsection{MaxAbs Scaler}
+\[
+x'_i = \frac{x_i}{\max(|x|)}
+\]
+Escala cada feature pelo seu valor absoluto máximo. Preserva zeros (útil para dados esparsos).
+
+\subsubsection{Transformação Logarítmica}
+\[
+x'_i = \log(1 + x_i)
+\]
+Reduz a assimetria de distribuições com cauda longa à direita (renda, preços, contagens). O $+1$ evita $\log(0)$.
+
+\begin{table}[ht]
+\centering
+\caption{Guia de seleção de métodos de escalonamento}
+\label{tab:scaling}
+\small
+\begin{tabular}{>{\bfseries}p{2.8cm} p{3.5cm} p{5.0cm}}
+\toprule
+\textbf{Método} & \textbf{Use quando} & \textbf{Não use quando} \\
+\midrule
+Min-Max & Redes neurais; dados sem outliers; range fixo necessário & Dados com outliers significativos \\
+Z-Score & Regressão linear/logística; SVM; PCA & Distribuições muito assimétricas \\
+Robust & Dados com outliers que devem ser mantidos & Algoritmos que exigem $[0,1]$ \\
+MaxAbs & Dados esparsos (matrizes TF-IDF); quando zero é significativo & Dados densos com outliers \\
+Log & Features com distribuição log-normal; contagens; preços & Dados com zeros (usar $\log(1+x)$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=============================================================
+\section{Seleção de Atributos (Feature Selection)}
+%=============================================================
+
+A seleção de atributos é o processo de identificar e manter apenas as features relevantes para o problema, eliminando aquelas redundantes, irrelevantes ou que introduzem ruído. Benefícios incluem: redução de overfitting, melhoria de interpretabilidade, redução do tempo de treinamento e melhoria da performance do modelo em dados de alta dimensionalidade.
+
+\subsection{Métodos de Filtro}
+
+Avaliam a relevância de cada feature independentemente do algoritmo de aprendizado, usando medidas estatísticas:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Correlação de Pearson:} Para relações lineares entre variáveis numéricas. $r = \frac{\text{cov}(X, Y)}{\sigma_X \sigma_Y}$. Remove features com $|r| > 0.9$ (altamente correlacionadas entre si).
+
+  \item \textbf{V de Cramér:} Para associação entre variáveis categóricas. Baseado no teste chi-quadrado: $V = \sqrt{\chi^2 / (n \cdot \min(r-1, c-1))}$, onde $r$ e $c$ são o número de linhas e colunas da tabela de contingência.
+
+  \item \textbf{ANOVA F-test:} Para relação entre feature numérica e alvo categórico. Testa se as médias da feature diferem significativamente entre as classes.
+
+  \item \textbf{Informação Mútua:} Mede a dependência estatística geral (não apenas linear) entre a feature e o alvo: $I(X;Y) = \sum_{x,y} p(x,y) \log \frac{p(x,y)}{p(x)p(y)}$.
+
+  \item \textbf{Teste Chi-quadrado:} Para features categóricas vs.\ alvo categórico. Testa independência estatística.
+\end{itemize}
+
+\subsection{Métodos Wrapper}
+
+Usam um algoritmo de aprendizado para avaliar subconjuntos de features. Mais poderosos que filtros, mas computacionalmente mais caros:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{RFE} (\textit{Recursive Feature Elimination}): Treina o modelo, remove a feature menos importante e repete até atingir o número desejado de features. Disponível em sklearn como \texttt{RFE(estimator, n\_features\_to\_select)}.
+
+  \item \textbf{Sequential Forward Selection (SFS):} Começa com conjunto vazio e adiciona a feature que mais melhora o desempenho em cada passo.
+
+  \item \textbf{Sequential Backward Selection (SBS):} Começa com todas as features e remove a que menos prejudica o desempenho em cada passo.
+\end{itemize}
+
+\subsection{Métodos Embutidos (Embedded)}
+
+A seleção acontece durante o próprio treinamento do modelo:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Regularização LASSO} (Tibshirani, 1996): Adiciona penalidade $\ell_1$ ao custo: $\min_\beta \|y - X\beta\|^2 + \lambda \|\beta\|_1$. Produz coeficientes exatamente zero para features irrelevantes, realizando seleção automática.
+
+  \item \textbf{Importância em Árvores:} Florestas aleatórias e gradient boosting calculam a importância de cada feature pela redução total de impureza de Gini causada por ela. Também disponível como \textit{permutation importance} (mais robusto, mas mais lento).
+\end{itemize}
+
+\vspace{0.4cm}
+\begin{center}
+\begin{tikzpicture}[
+  tree/.style={rectangle,rounded corners,draw=mineblue,fill=mineblue!10,
+               minimum width=1.5cm,minimum height=0.7cm,font=\small,align=center},
+  edge from parent/.style={draw,->,thick},
+  level 1/.style={sibling distance=5.5cm, level distance=1.6cm},
+  level 2/.style={sibling distance=1.9cm, level distance=1.5cm}]
+\node[tree,fill=mineblue!30] {Seleção de\\Atributos}
+  child { node[tree,fill=mineorange!20] {Filtro}
+    child { node[tree,font=\tiny,fill=mineorange!10] {Correlação\\de Pearson} }
+    child { node[tree,font=\tiny,fill=mineorange!10] {Informação\\Mútua} }
+    child { node[tree,font=\tiny,fill=mineorange!10] {Chi-quadrado} }
+  }
+  child { node[tree,fill=minegreen!20] {Wrapper}
+    child { node[tree,font=\tiny,fill=minegreen!10] {RFE} }
+    child { node[tree,font=\tiny,fill=minegreen!10] {SFS / SBS} }
+  }
+  child { node[tree,fill=purple!20] {Embutido}
+    child { node[tree,font=\tiny,fill=purple!10] {LASSO} }
+    child { node[tree,font=\tiny,fill=purple!10] {Importância\\em Árvores} }
+  };
+\end{tikzpicture}
+\end{center}
+
+%=============================================================
+\section{Redução de Dimensionalidade}
+%=============================================================
+
+\subsection{PCA -- Análise de Componentes Principais}
+
+O PCA (\textit{Principal Component Analysis}) é uma técnica linear que projeta os dados em um espaço de menor dimensão, maximizando a variância retida. É amplamente usado para visualização, remoção de correlações e compressão de dados.
+
+\textbf{Derivação matemática:}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Passo \arabic*:}]
+  \item Centralizar a matriz de dados: $\tilde{X} = X - \bar{X}$ (subtrair a média de cada coluna)
+
+  \item Calcular a matriz de covariância: $\Sigma = \frac{1}{n-1} \tilde{X}^T \tilde{X} \in \mathbb{R}^{p \times p}$
+
+  \item Calcular os autovetores e autovalores: $\Sigma v_i = \lambda_i v_i$, onde $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_p \geq 0$
+
+  \item Ordenar os autovetores por autovalores decrescentes (os autovetores formam os eixos dos componentes principais)
+
+  \item Selecionar $k$ componentes e projetar: $Z = \tilde{X} V_k$, onde $V_k \in \mathbb{R}^{p \times k}$ contém os $k$ primeiros autovetores
+
+  \item Variância explicada por cada componente: $\text{EVR}_i = \dfrac{\lambda_i}{\sum_{j=1}^{p} \lambda_j}$
+\end{enumerate}
+
+\textbf{Regra prática:} Selecionar o menor $k$ tal que $\sum_{i=1}^{k} \text{EVR}_i \geq 0.95$ (95\% da variância explicada).
+
+\subsection{t-SNE e UMAP}
+
+t-SNE (\textit{t-distributed Stochastic Neighbor Embedding} - Maaten \& Hinton, 2008) e UMAP (\textit{Uniform Manifold Approximation and Projection} - McInnes et al., 2018) são técnicas não lineares para \textbf{visualização} em 2D ou 3D. Preservam a estrutura de vizinhança local dos dados. Não devem ser usadas para feature reduction em produção (os eixos resultantes não têm interpretação e não podem ser aplicados a novos dados de forma consistente). UMAP é significativamente mais rápido que t-SNE e escalável para grandes datasets.
+
+\subsection{Autoencoders para Redução}
+
+Redes neurais do tipo autoencoder aprendem uma representação comprimida (\textit{latent space}) dos dados. O encoder mapeia $x \rightarrow z$ (compressão) e o decoder mapeia $z \rightarrow \hat{x}$ (reconstrução). Ao treinar para minimizar $\|x - \hat{x}\|^2$, o encoder aprende features latentes significativas. Variational Autoencoders (VAEs) adicionam restrições probabilísticas ao espaço latente.
+
+%=============================================================
+\section{Balanceamento de Classes}
+%=============================================================
+
+O desbalanceamento de classes ocorre quando uma ou mais classes têm muito menos exemplos que as demais. Modelos treinados em dados desbalanceados tendem a favorecer a classe majoritária, resultando em alta acurácia global mas péssimo desempenho na classe minoritária (que frequentemente é a mais importante, como fraude ou diagnóstico positivo).
+
+\begin{exemplobox}{Exemplo: Detecção de Fraude}
+Em um dataset de transações com 0.1\% de fraudes: um modelo que sempre prevê ``não é fraude'' tem 99.9\% de acurácia mas é completamente inútil. As métricas adequadas para dados desbalanceados são Precision, Recall, F1-Score e AUC-ROC.
+\end{exemplobox}
+
+\subsubsection{Oversampling}
+
+\textbf{SMOTE} (\textit{Synthetic Minority Over-sampling Technique} - Chawla et al., 2002): Gera exemplos sintéticos da classe minoritária interpolando entre instâncias existentes:
+\[
+x_{new} = x_i + \lambda \cdot (x_{nn} - x_i), \quad \lambda \sim \mathcal{U}[0, 1]
+\]
+onde $x_{nn}$ é um vizinho aleatório de $x_i$ no espaço de features.
+
+\textbf{ADASYN} (\textit{Adaptive Synthetic Sampling}): Variante do SMOTE que gera mais exemplos sintéticos nas regiões de decisão difíceis (onde a maioria dos vizinhos é da classe oposta).
+
+\textbf{Borderline-SMOTE}: Foca na geração de sintéticos apenas nas instâncias próximas à fronteira de decisão, evitando amplificar ruído em regiões seguras.
+
+\subsubsection{Undersampling}
+
+\textbf{Random Undersampling:} Remove aleatoriamente instâncias da classe majoritária. Rápido mas pode eliminar informações úteis.
+
+\textbf{Tomek Links:} Remove instâncias da classe majoritária que estão muito próximas à fronteira de decisão (pares Tomek), limpando a fronteira.
+
+\textbf{ENN} (\textit{Edited Nearest Neighbors}): Remove instâncias cuja classe difere da maioria dos seus $k$ vizinhos, remove instâncias ``ruidosas'' de qualquer classe.
+
+\begin{table}[ht]
+\centering
+\caption{Estratégias de balanceamento de classes}
+\label{tab:balanceamento}
+\small
+\begin{tabular}{>{\bfseries}p{2.8cm} p{3.2cm} p{3.2cm} p{3.0cm}}
+\toprule
+\textbf{Estratégia} & \textbf{Vantagens} & \textbf{Desvantagens} & \textbf{Quando Usar} \\
+\midrule
+SMOTE & Aumenta diversidade; não perde dados & Pode gerar regiões irreais & Dataset pequeno a médio \\
+\midrule
+ADASYN & Foca nas regiões difíceis & Amplifica ruído & Fronteira de decisão complexa \\
+\midrule
+Random Under & Simples e rápido & Perde informação & Dataset grande; custo computacional alto \\
+\midrule
+Tomek Links & Limpa a fronteira & Efeito modesto & Pré-processamento complementar \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+%=============================================================
+\section{Estado da Arte}
+%=============================================================
+
+\begin{estadoartebox}{TabPFN (2022) -- Transformers para Dados Tabulares}
+TabPFN (Prior-Fitted Network - Hollmann et al., 2022) é um modelo transformer pré-treinado especificamente para classificação em dados tabulares pequenos ($< 1000$ amostras, $< 100$ features). Em benchmarks, supera XGBoost e Random Forest em datasets pequenos, sem necessidade de ajuste de hiperparâmetros. Representa uma nova geração de modelos fundacionais para ciência de dados.
+\end{estadoartebox}
+
+\begin{estadoartebox}{Deep Learning para Imputação}
+GAIN (\textit{Generative Adversarial Imputation Nets} - Yoon et al., 2018) usa GANs para imputação: o gerador produz imputações e o discriminador distingue entre valores observados e imputados. GRAPE (\textit{Graph-based Prediction of Missing Data} - You et al., 2020) modela o problema de imputação como predição em grafos bipartidos. São abordagens de ponta para dados altamente correlacionados.
+\end{estadoartebox}
+
+\begin{estadoartebox}{Engenharia Automática de Features}
+Featuretools (2018) usa ``\textit{deep feature synthesis}'' para criar automaticamente features agregadas a partir de conjuntos de dados relacionais. AutoFeat usa regressão linear esparsa com transformações não lineares. OpenFE (Zhang et al., 2023) é um framework de geração automática de features de alto desempenho compatível com XGBoost e LightGBM.
+\end{estadoartebox}
+
+%=============================================================
+\section{Exercícios}
+%=============================================================
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Exercício \arabic*.}]
+
+  \item \textbf{(Mecanismos de Ausência)} Para cada situação, identifique o mecanismo de ausência (MCAR, MAR ou MNAR) e justifique: (a) Em uma pesquisa salarial, pessoas com salários acima de R\$20.000 tendem a não responder o campo de renda. (b) Em registros médicos, exames de certos dias da semana não foram digitalizados por falha do sistema. (c) Em um questionário online, usuários de dispositivos móveis não respondem questões com tabelas.
+
+  \item \textbf{(Estratégia de Imputação)} Um dataset de churn de clientes possui 35\% de valores ausentes na coluna ``número de ligações ao suporte'' e o diagnóstico indica mecanismo MAR. Escolha e justifique a melhor estratégia de imputação. Descreva como você validaria se a imputação foi bem-sucedida.
+
+  \item \textbf{(Outliers)} Dado um conjunto de valores de renda mensal (R\$): [1200, 1500, 1800, 2100, 1900, 2300, 52000, 1600, 1400, 2000]. Aplique o método IQR para identificar outliers. Calcule Q1, Q3 e IQR manualmente. O valor R\$52.000 é um outlier? O que você faria com este valor em um modelo de crédito?
+
+  \item \textbf{(Normalização)} Explique por que é necessário escalonar as features antes de aplicar: (a) K-Means; (b) PCA; (c) Árvores de Decisão; (d) Gradient Boosting. Em quais casos o escalonamento NÃO é necessário e por quê?
+
+  \item \textbf{(Pipeline)} Implemente um pipeline sklearn completo para um dataset com 5 features numéricas (algumas com valores ausentes) e 3 features categóricas. O pipeline deve: tratar ausentes, escalar numéricas, codificar categóricas e treinar um classificador. Avalie com cross-validation e apresente as métricas.
+
+  \item \textbf{(Desbalanceamento)} Um dataset de detecção de fraude tem 98\% de transações normais e 2\% de fraudes. Treine um modelo sem balanceamento e com SMOTE. Compare os resultados usando F1-Score, Precision, Recall e AUC-ROC. Por que a acurácia não é uma boa métrica para este problema?
+
+\end{enumerate}
+
+%=============================================================
+\section{Referências Bibliográficas}
+%=============================================================
+
+\begin{thebibliography}{99}
+
+\bibitem{garcia2015}
+GARCÍA, S. et al. \textit{Data Preprocessing in Data Mining}. Heidelberg: Springer, 2015.
+
+\bibitem{chawla2002}
+CHAWLA, N. V. et al. SMOTE: Synthetic Minority Over-sampling Technique. \textit{Journal of Artificial Intelligence Research}, v. 16, p. 321--357, 2002.
+
+\bibitem{liu2008}
+LIU, F. T.; TING, K. M.; ZHOU, Z.-H. Isolation Forest. In: \textit{Proceedings of the 8th IEEE International Conference on Data Mining (ICDM)}, 2008, p. 413--422.
+
+\bibitem{breunig2000}
+BREUNIG, M. M. et al. LOF: Identifying Density-Based Local Outliers. In: \textit{Proceedings of the 2000 ACM SIGMOD International Conference on Management of Data}, 2000, p. 93--104.
+
+\bibitem{vanbuuren2018}
+VAN BUUREN, S. \textit{Flexible Imputation of Missing Data}. 2. ed. Boca Raton: CRC Press, 2018. Disponível em: \url{https://stefvanbuuren.name/fimd/}.
+
+\bibitem{mcInnes2018}
+McINNES, L.; HEALY, J.; MELVILLE, J. UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. \textit{arXiv preprint arXiv:1802.03426}, 2018.
+
+\bibitem{tibshirani1996}
+TIBSHIRANI, R. Regression Shrinkage and Selection via the Lasso. \textit{Journal of the Royal Statistical Society: Series B}, v. 58, n. 1, p. 267--288, 1996.
+
+\bibitem{buuren2011}
+VAN BUUREN, S.; GROOTHUIS-OUDSHOORN, K. mice: Multivariate Imputation by Chained Equations in R. \textit{Journal of Statistical Software}, v. 45, n. 3, p. 1--67, 2011.
+
+\bibitem{stekhoven2012}
+STEKHOVEN, D. J.; BUHLMANN, P. MissForest---non-parametric missing value imputation for mixed-type data. \textit{Bioinformatics}, v. 28, n. 1, p. 112--118, 2012.
+
+\bibitem{yoon2018}
+YOON, J.; JORDON, J.; SCHAAR, M. GAIN: Missing Data Imputation using Generative Adversarial Nets. In: \textit{Proceedings of the 35th International Conference on Machine Learning (ICML)}, 2018, p. 5689--5698.
+
+\bibitem{tukey1977}
+TUKEY, J. W. \textit{Exploratory Data Analysis}. Reading: Addison-Wesley, 1977.
+
+\bibitem{hollmann2022}
+HOLLMANN, N. et al. TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second. \textit{arXiv preprint arXiv:2207.01848}, 2022.
+
+\end{thebibliography}
+
+\end{document}
