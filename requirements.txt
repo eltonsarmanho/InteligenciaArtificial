@@ -10,6 +10,7 @@ transformers
 jinja2
 pypdf
 yt_dlp
+tf-keras
 pydub
 audioop-lts; python_version>='3.13'
 beautifulsoup4==4.12.3
