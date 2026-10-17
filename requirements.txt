@@ -8,6 +8,8 @@ langchain-huggingface
 langchain-ollama==0.3.3
 transformers
 jinja2
+seaborn
+imblearn
 pypdf
 yt_dlp
 tf-keras
