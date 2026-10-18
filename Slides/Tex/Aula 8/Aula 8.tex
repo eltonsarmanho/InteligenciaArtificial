@@ -1,0 +1,694 @@
+\documentclass[aspectratio=169]{beamer}
+\setbeamerfont{headline}{size=\footnotesize}
+
+\mode<presentation>{
+    \usetheme{Montpellier}
+    \setbeamercovered{transparent}
+    \usecolortheme{beaver}
+}
+
+\usepackage[english,brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,shapes.multipart,
+                shapes,arrows,calc,matrix}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{ragged2e}
+\usepackage{listings}
+
+\definecolor{mineblue}{RGB}{0,90,180}
+\definecolor{mineorange}{RGB}{230,115,0}
+\definecolor{minegreen}{RGB}{34,139,34}
+\definecolor{minered}{RGB}{180,20,40}
+\definecolor{minegray}{RGB}{100,100,100}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{backgroundcolor=\color{backcolour},commentstyle=\color{minegreen},
+  keywordstyle=\color{mineblue},stringstyle=\color{minered},basicstyle=\ttfamily\scriptsize,
+  breaklines=true,showstringspaces=false,frame=single,framesep=4pt,upquote=true,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ã}{{\~a}}1 {õ}{{\~o}}1 {ç}{{\c c}}1 {ê}{{\^e}}1 {â}{{\^a}}1 {º}{{\textordmasculine}}1 {Ê}{{\^E}}1 {Ç}{{\c C}}1}
+\lstset{style=mystyle,language=Python}
+
+\newcommand{\reflexao}[1]{\begin{alertblock}{Reflexão}#1\end{alertblock}}
+\newcommand{\key}[1]{\underline{#1}}
+\newcommand{\citacao}[1]{\hfill\textcolor{minegray}{\tiny #1}}
+\newcommand{\tk}[1]{{\setlength{\fboxsep}{1.6pt}\colorbox{mineblue!12}{\strut\ttfamily\footnotesize #1}}}
+\newcommand{\real}{\textcolor{minegreen}{\tiny\faIcon{flask}\ execução real · llama3.2 (Ollama, CPU) · \textit{seed} 42}}
+\input{gen_vals}
+\tikzset{etapa/.style={rectangle,draw=#1,fill=#1!10,rounded corners,text width=3.75cm,minimum height=2.3cm,align=left,font=\scriptsize}}
+
+\title[Inteligência Artificial]{Modelos de Linguagem de Grande Escala (LLMs)}
+\subtitle{Aula 8: como um LLM funciona por dentro}
+\author[Elton Sarmanho]{
+    Prof. Elton Sarmanho\inst{1}\\
+    \footnotesize \href{mailto:eltonss@ufpa.br}{eltonss@ufpa.br}
+}
+\institute[UFPA]{
+    \inst{1} Faculdade de Sistemas de Informação - UFPA Campus Cametá
+}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+    \begin{center}
+        \tiny \faIcon{github}\ \href{https://github.com/eltonsarmanho}{github.com/eltonsarmanho} \quad
+        \faIcon{linkedin}\ \href{https://www.linkedin.com/in/elton-sarmanho-836553185/}{Elton Sarmanho}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Roteiro da Aula}
+    \tableofcontents[sections={1-4}]
+\end{frame}
+
+\begin{frame}{Roteiro da Aula}
+   \tableofcontents[sections={5-9}]
+\end{frame}
+
+% ==============================================================================
+\section{Planejamento}
+% ==============================================================================
+\begin{frame}{Nesta aula}
+    \begin{itemize}
+        \item Entender o que um LLM realmente calcula: a \textbf{probabilidade do próximo token}.
+        \item Ver como o texto vira \textbf{tokens} e vetores, e como a \textbf{atenção} mistura o contexto.
+        \item Entender as decisões de geração: \textbf{temperatura}, \textit{top-k} e \textit{top-p}.
+        \item Usar \textit{prompts} com critério e reconhecer os \textbf{limites} que motivam o RAG (Aula 7).
+        \item Todos os números desta aula vêm de execuções reais do \texttt{llama3.2} no notebook \texttt{LLM.ipynb}.
+    \end{itemize}
+    \reflexao{Na Aula 7, o RAG entregava evidências a um LLM. Mas o que o LLM faz com elas, token a token?}
+\end{frame}
+
+% ==============================================================================
+\section{O que é um LLM?}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{O que é\\um LLM?}
+\end{frame}
+
+\subsection{Modelo de linguagem}
+\begin{frame}{Modelo de Linguagem}
+    \begin{block}{Definição}
+        \footnotesize Um \textbf{modelo de linguagem} atribui probabilidades a sequências de texto. Na forma usada pelos LLMs, ele estima a probabilidade de cada \textbf{próximo token} dado tudo o que veio antes (\textit{autorregressivo}).
+    \end{block}
+    \pause
+    \[
+      P(w_1, w_2, \dots, w_n) \;=\; \prod_{t=1}^{n} P_\theta\!\left(w_t \mid w_1, \dots, w_{t-1}\right)
+    \]
+    \footnotesize $w_t$: token na posição $t$; $w_1,\dots,w_{t-1}$: contexto; $\theta$: parâmetros (pesos) do modelo.
+    \pause
+    \begin{alertblock}{}
+        \footnotesize Um LLM (\textit{Large Language Model}) é um modelo de linguagem com bilhões de parâmetros, treinado em grandes coleções de texto. O \texttt{llama3.2} usado na aula tem cerca de 3 bilhões (\texttt{\vSIZE}).
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Analogia}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Autocompletar do celular}
+            \footnotesize Olha as últimas uma ou duas palavras e sugere a próxima, a partir de contagens.
+        \end{block}
+        \column{0.5\textwidth}
+        \pause
+        \begin{block}{LLM}
+            \footnotesize Olha \textbf{todo} o contexto (milhares de tokens) e calcula uma distribuição de probabilidade sobre as \vVOC\ peças do vocabulário.
+        \end{block}
+    \end{columns}
+    \pause
+    \vspace{0.3cm}
+    \begin{alertblock}{O ponto central}
+        \footnotesize O LLM não consulta um banco de fatos: ele escolhe tokens prováveis. Quando o fato está bem representado no treino, o provável coincide com o verdadeiro; quando não está, o provável pode ser falso.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Na prática: o próximo token}
+    \begin{columns}
+        \column{0.42\textwidth}
+        \footnotesize \textbf{Contexto:} \textit{``A capital do Pará é''}\\[4pt]
+        \textbf{Tokens:} \tk{A}\,\tk{\textvisiblespace{}capital}\,\tk{\textvisiblespace{}do}\,\tk{\textvisiblespace{}Par}\,\tk{á}\,\tk{\textvisiblespace{}é}\\[6pt]
+        O modelo devolve uma probabilidade para cada token do vocabulário. O mais provável é \tk{\textvisiblespace{}Bel}, com \textbf{\vBELP}; depois vem \tk{\textvisiblespace{}a}, com \vAP.\\[6pt]
+        \real
+        \column{0.58\textwidth}
+        \begin{tikzpicture}
+        \begin{axis}[ybar,width=\linewidth,height=5.2cm,bar width=13pt,ymin=0,ymax=90,
+            ylabel={\footnotesize probabilidade (\%)},xtick=data,xticklabels/.expand once={\labsBel},
+            xticklabel style={font=\scriptsize},yticklabel style={font=\scriptsize,/pgf/number format/.cd,fixed,precision=0,fixed zerofill=false},
+            nodes near coords,nodes near coords style={font=\tiny},/pgf/number format/.cd,use comma,fixed,zerofill,precision=1,1000 sep={},/pgfplots/.cd,
+            enlarge x limits=0.12,axis lines*=left]
+            \addplot[fill=mineblue!70,draw=mineblue] coordinates {\barsBel};
+        \end{axis}
+        \end{tikzpicture}
+    \end{columns}
+\end{frame}
+
+\subsection{Uma breve história}
+\begin{frame}[shrink=5]{De contagens a Transformers}
+    \centering
+    \begin{tikzpicture}[ev/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,text width=2.45cm,align=center,font=\scriptsize,minimum height=1.35cm}]
+        \draw[-{Stealth[length=6pt]},thick,minegray] (-0.3,0) -- (14.2,0);
+        \foreach \x/\ano/\txt in {0.9/{1948}/{\textbf{n-gramas}\\Shannon\\contagens de sequências curtas},
+                                  3.8/2003/{\textbf{rede neural}\\Bengio et al.\\vetores de palavras},
+                                  6.7/2013/{\textbf{word2vec}\\Mikolov et al.\\\textit{embeddings}},
+                                  9.6/2017/{\textbf{Transformer}\\Vaswani et al.\\atenção},
+                                  12.5/2020/{\textbf{GPT-3}\\Brown et al.\\175 bi de parâmetros}}{
+            \node[ev] at (\x,1.25) {\txt};
+            \fill[mineblue] (\x,0) circle (2.5pt);
+            \node[font=\scriptsize\bfseries,below] at (\x,-0.1) {\ano};
+        }
+    \end{tikzpicture}
+    \vspace{0.2cm}
+    \begin{block}{O que mudou em 2017}
+        \footnotesize A \textbf{atenção} permite que cada token consulte diretamente todos os anteriores, em paralelo. Isso viabilizou treinar modelos muito maiores, em muito mais texto.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Tokens e Embeddings}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{Tokens e\\Embeddings}
+\end{frame}
+
+\subsection{Tokenização}
+\begin{frame}{Tokenização: o texto vira peças}
+    \begin{block}{BPE --- \textit{Byte Pair Encoding} (Sennrich et al., 2016)}
+        \footnotesize Começa com bytes e junta, repetidamente, o par mais frequente no corpus de treino. Palavras comuns viram um único token; palavras raras são quebradas em subpalavras. O vocabulário do \texttt{llama3.2} tem \textbf{\vVOC} tokens.
+    \end{block}
+    \pause
+    \footnotesize
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{}l l c@{}}
+        \toprule
+        \textbf{Texto} & \textbf{Tokens (\texttt{llama3.2})} & \textbf{nº} \\ \midrule
+        Inteligência Artificial & \tokA & \ntokA \\
+        heurística & \tokD & \ntokD \\
+        Cametá & \tokE & \ntokE \\
+        Sistemas de Informação & \tokF & \ntokF \\ \bottomrule
+    \end{tabular}\\[4pt]
+    \real
+\end{frame}
+
+\begin{frame}[shrink=6]{Por que tokens importam}
+    \footnotesize
+    \textbf{\ntokB\ tokens} (10 palavras):\ \tokB\\[4pt]
+    \textbf{\ntokC\ tokens} (9 palavras):\ \tokC\\[6pt]
+    \pause
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Consequências}
+            \begin{itemize}\footnotesize
+                \item Custo e limite são medidos em \textbf{tokens}, não em palavras.
+                \item Aqui, a frase em português gastou mais tokens que a mesma frase em inglês (\ntokB\ $\times$ \ntokC). É comum: o vocabulário foi construído com mais texto em inglês.
+                \item Números são cortados em grupos de até 3 dígitos: \tk{3}\,\tk{.}\,\tk{332}.
+            \end{itemize}
+        \end{block}
+        \column{0.5\textwidth}
+        \begin{block}{Janela de contexto}
+            \footnotesize O \texttt{llama3.2} foi treinado para até \textbf{\vCTX} tokens de contexto. O PPC inteiro tem \vPPCtok\ tokens. Mas a janela que o Ollama usou por padrão neste PC é bem menor: de \vJENV\ tokens enviados, processou só os últimos \vJPROC; com \texttt{num\_ctx = 16384}, processou os \vJCTX. O que não cabe na janela, o modelo não vê.
+        \end{block}
+    \end{columns}
+    \real
+\end{frame}
+
+\subsection{Embeddings}
+\begin{frame}{De tokens a vetores}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Tabela de \textit{embeddings}}
+            \footnotesize Cada token é um número (o seu \textit{id}) que indexa uma linha de uma tabela aprendida: um vetor de \textbf{\vEMB} dimensões no \texttt{llama3.2}.
+        \end{block}
+        \pause
+        \begin{block}{Posição}
+            \footnotesize O modelo também precisa saber a \textbf{ordem}. O \texttt{llama3.2} codifica a posição girando os vetores de consulta e chave (\textit{RoPE}, Su et al., 2021).
+        \end{block}
+        \column{0.5\textwidth}
+        \centering
+        \begin{tikzpicture}[c/.style={draw=mineblue,fill=mineblue!10,minimum width=0.42cm,minimum height=0.42cm,font=\tiny}]
+            \node[font=\footnotesize] (t) at (0,2.4) {\tk{\textvisiblespace{}capital}};
+            \node[font=\scriptsize,minegray] at (0,1.85) {\textit{id} $\to$ linha da tabela};
+            \foreach \i/\v in {0/{0,12},1/{-0,4},2/{0,9},3/{0,05},4/{-0,7}}{\node[c] at (-1.05+\i*0.52,1.2) {\v};}
+            \node[font=\scriptsize] at (1.75,1.2) {$\cdots$};
+            \node[font=\scriptsize,minegray] at (0,0.6) {vetor de \vEMB\ números};
+            \node[font=\tiny,minegray] at (0,0.15) {(valores ilustrativos)};
+        \end{tikzpicture}
+        \reflexao{Na Aula 7, os \textit{embeddings} do MiniLM representavam frases inteiras. Aqui, cada token tem o seu vetor. Qual é a diferença de uso?}
+    \end{columns}
+\end{frame}
+
+% ==============================================================================
+\section{Atenção e Transformer}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{Atenção e\\Transformer}
+\end{frame}
+
+\subsection{Autoatenção}
+\begin{frame}{Autoatenção (\textit{self-attention})}
+    \begin{block}{Ideia (Vaswani et al., 2017)}
+        \footnotesize Cada token gera três vetores: \textbf{consulta} $q$ (o que procuro), \textbf{chave} $k$ (o que ofereço) e \textbf{valor} $v$ (o que entrego). A consulta é comparada com as chaves de todos os tokens anteriores; os pesos resultantes misturam os valores.
+    \end{block}
+    \pause
+    \[
+      \text{Atenção}(Q,K,V) \;=\; \text{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}} + M\right) V
+    \]
+    \footnotesize $QK^\top$: similaridade consulta $\times$ chave; $\sqrt{d_k}$: escala pela dimensão; $M$: \textbf{máscara causal} ($-\infty$ para tokens futuros); softmax: transforma em pesos que somam 1.
+    \pause
+    \begin{alertblock}{}
+        \footnotesize A máscara causal é o que faz o modelo ser autorregressivo: ao prever a posição $t$, ele só enxerga $w_1,\dots,w_{t-1}$.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Questão}
+    \footnotesize
+    Considere o contexto \textit{``capital do Pará''} e a consulta do último token, \tk{Pará}, com $d_k = 4$:
+    \[
+      q_{\text{Pará}} = (1,0,1,0)
+      \qquad
+      \begin{array}{l|c|c}
+         \text{token} & k & v \\ \hline
+         \text{capital} & (1,0,1,0) & (1,0) \\
+         \text{do}      & (0,1,0,0) & (0,1) \\
+         \text{Pará}    & (1,1,0,0) & (1,1)
+      \end{array}
+    \]
+    \textbf{Questão:}
+    \begin{enumerate}
+        \item Calcule os escores $q \cdot k_j / \sqrt{d_k}$ para os três tokens.
+        \item Aplique a softmax para obter os pesos de atenção.
+        \item Calcule a saída $\sum_j \alpha_j\, v_j$. Qual token mais influencia \tk{Pará}?
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Dicas para Resolução}
+    \textbf{Passos para resolver:}
+    \begin{itemize}
+        \item Produto escalar: some os produtos componente a componente.
+        \item Divida por $\sqrt{4} = 2$.
+        \item Softmax: $\alpha_j = e^{s_j} / \sum_i e^{s_i}$. Use $e^{1} \approx 2{,}718$, $e^{0{,}5} \approx 1{,}649$ e $e^{0} = 1$.
+        \item A saída é a média dos valores $v_j$, ponderada pelos pesos $\alpha_j$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Passo 1: Escores}
+    \footnotesize
+    \begin{align*}
+      q \cdot k_{\text{capital}} &= 1{\cdot}1 + 0{\cdot}0 + 1{\cdot}1 + 0{\cdot}0 = 2 &\Rightarrow\; s_1 &= 2/2 = 1\\
+      q \cdot k_{\text{do}}      &= 1{\cdot}0 + 0{\cdot}1 + 1{\cdot}0 + 0{\cdot}0 = 0 &\Rightarrow\; s_2 &= 0/2 = 0\\
+      q \cdot k_{\text{Pará}}    &= 1{\cdot}1 + 0{\cdot}1 + 1{\cdot}0 + 0{\cdot}0 = 1 &\Rightarrow\; s_3 &= 1/2 = 0{,}5
+    \end{align*}
+    \pause
+    \begin{block}{Leitura}
+        \footnotesize A chave de \textit{capital} é a mais parecida com a consulta. A máscara causal não atua aqui: \textit{Pará} é o último token e enxerga todos os anteriores (e a si mesmo).
+    \end{block}
+\end{frame}
+
+\begin{frame}{Passo 2: Softmax}
+    \footnotesize
+    \[
+      \sum_i e^{s_i} = e^{1} + e^{0} + e^{0,5} \approx 2{,}718 + 1 + 1{,}649 = 5{,}367
+    \]
+    \[
+      \alpha_{\text{capital}} \approx \frac{2{,}718}{5{,}367} \approx 0{,}506
+      \qquad
+      \alpha_{\text{do}} \approx \frac{1}{5{,}367} \approx 0{,}186
+      \qquad
+      \alpha_{\text{Pará}} \approx \frac{1{,}649}{5{,}367} \approx 0{,}307
+    \]
+    \pause
+    \centering
+    \begin{tikzpicture}
+        \foreach \t/\a/\b/\i in {capital/0.506/{0,506}/0,do/0.186/{0,186}/1,Pará/0.307/{0,307}/2}{
+            \fill[mineorange!\fpeval{round(\a*180)}] (\i*2.1,0) rectangle ++(1.9,0.8);
+            \draw[mineorange] (\i*2.1,0) rectangle ++(1.9,0.8);
+            \node[font=\footnotesize] at (\i*2.1+0.95,0.4) {\b};
+            \node[font=\scriptsize,below] at (\i*2.1+0.95,0) {\t};
+        }
+        \node[font=\scriptsize,minegray,left] at (0,0.4) {pesos de \textit{Pará}:};
+    \end{tikzpicture}\\[2pt]
+    \footnotesize Os pesos somam $1$ (com arredondamento).
+\end{frame}
+
+\begin{frame}{Passo 3: Saída ponderada}
+    \footnotesize
+    \[
+      o_{\text{Pará}} = 0{,}506\,(1,0) + 0{,}186\,(0,1) + 0{,}307\,(1,1) \approx (0{,}814;\ 0{,}494)
+    \]
+    \pause
+    \begin{block}{Interpretação}
+        \footnotesize A nova representação de \textit{Pará} é, em grande parte, informação vinda de \textit{capital}: o contexto foi \textbf{misturado} ao token. Em um modelo real, isso se repete em muitas cabeças e camadas.
+    \end{block}
+    \pause
+    \begin{alertblock}{No \texttt{llama3.2}}
+        \footnotesize \vLAY\ camadas, \vHEADS\ cabeças de atenção por camada, compartilhando \vKV\ grupos de chave e valor (\textit{grouped-query attention}). Os vetores têm \vEMB\ dimensões. Valores lidos do próprio arquivo do modelo.
+    \end{alertblock}
+\end{frame}
+
+\subsection{O bloco Transformer}
+\begin{frame}[shrink=5]{O Transformer decodificador}
+    \centering
+    \begin{tikzpicture}[b/.style={rectangle,draw=mineblue,fill=mineblue!8,rounded corners,minimum width=3.6cm,minimum height=0.62cm,font=\scriptsize,align=center},
+                        a/.style={-{Stealth[length=5pt]},mineblue,thick}]
+        \node[b] (in) {tokens $\to$ \textit{embeddings}};
+        \node[b,above=0.38cm of in,fill=mineorange!12,draw=mineorange] (att) {autoatenção mascarada (+ RoPE)};
+        \node[b,above=0.38cm of att,fill=minegreen!12,draw=minegreen] (ffn) {rede \textit{feed-forward} (\vFFN\ neurônios)};
+        \node[b,above=0.38cm of ffn] (out) {probabilidades do próximo token};
+        \draw[a] (in) -- (att); \draw[a] (att) -- (ffn); \draw[a] (ffn) -- (out);
+        \node[draw=minegray,dashed,rounded corners,fit=(att)(ffn),inner sep=6pt,label={[font=\scriptsize,minegray]right:$\times$\,\vLAY\ camadas}] {};
+    \end{tikzpicture}
+    \pause
+    \begin{block}{Cada camada}
+        \footnotesize A atenção mistura informação \textbf{entre} tokens; a \textit{feed-forward} transforma cada token \textbf{individualmente}. Conexões residuais e normalização mantêm o treino estável. A última camada projeta o vetor em \vVOC\ escores, um por token do vocabulário.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Como um LLM é treinado}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{Como um LLM\\é treinado}
+\end{frame}
+
+\begin{frame}[shrink=5]{Três etapas}
+    \centering
+    \begin{tikzpicture}[a/.style={-{Stealth[length=6pt]},minegray,thick}]
+        \node[etapa=mineblue] (p) {\textbf{1. Pré-treino}\\[2pt]Prever o próximo token em trilhões de tokens de texto. É auto-supervisionado: o próprio texto fornece a resposta.};
+        \node[etapa=mineorange,right=0.55cm of p] (i) {\textbf{2. Ajuste por instrução}\\[2pt]\textit{Fine-tuning} supervisionado com pares instrução $\to$ resposta escritos por pessoas.};
+        \node[etapa=minegreen,right=0.55cm of i] (r) {\textbf{3. Alinhamento}\\[2pt]Pessoas comparam respostas; o modelo é ajustado para preferir as melhores (RLHF, Ouyang et al., 2022).};
+        \draw[a] (p) -- (i); \draw[a] (i) -- (r);
+    \end{tikzpicture}
+    \pause
+    \[
+      \mathcal{L}(\theta) = -\frac{1}{N}\sum_{t=1}^{N} \log P_\theta\!\left(w_t \mid w_{<t}\right)
+    \]
+    \footnotesize Entropia cruzada: penaliza o modelo quando ele dá pouca probabilidade ao token que de fato veio. Minimizá-la é o objetivo do pré-treino.
+\end{frame}
+
+\begin{frame}{Modelo base $\times$ modelo instruído}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Continuação crua (modo \texttt{raw})}
+            \footnotesize \textit{``A carga horária total do curso de Sistemas de Informação da UFPA Campus Cametá é de''} $\to$ \textbf{``600 horas''}.
+        \end{block}
+        \column{0.5\textwidth}
+        \begin{block}{Conversa (modelo instruído)}
+            \footnotesize \textit{``Qual a carga horária total do curso\dots?''} $\to$ \textbf{``Desculpe, mas não consegui encontrar informações atualizadas\dots''}
+        \end{block}
+    \end{columns}
+    \pause
+    \begin{alertblock}{}
+        \footnotesize É o mesmo modelo. Como completador de texto, ele inventa um número; no formato de conversa, o ajuste por instrução o leva a admitir que não sabe. O valor correto, no PPC, é \textbf{3.332 horas}.
+    \end{alertblock}
+    \real
+    \reflexao{Por que o mesmo modelo responde de formas tão diferentes só mudando o formato da entrada?}
+\end{frame}
+
+\begin{frame}{Escala}
+    \begin{block}{Leis de escala}
+        \footnotesize A perda cai de forma previsível quando aumentam parâmetros, dados e computação (Kaplan et al., 2020). Para um orçamento fixo de computação, o melhor é crescer parâmetros e tokens de treino na mesma proporção, cerca de 20 tokens por parâmetro (Hoffmann et al., 2022).
+    \end{block}
+    \pause
+    \begin{block}{Modelos pequenos e locais}
+        \footnotesize O \texttt{llama3.2} (3B) roda num notebook comum via Ollama. É ótimo para aprender e para dados que não podem sair da máquina, mas erra mais que modelos maiores. Avalie sempre na sua tarefa.
+    \end{block}
+\end{frame}
+
+% ==============================================================================
+\section{Como o texto é gerado}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{Como o texto\\é gerado}
+\end{frame}
+
+\subsection{Decodificação}
+\begin{frame}{Decodificação: escolher o próximo token}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{Gulosa (\textit{greedy})}
+            \footnotesize Sempre escolhe o token mais provável. É determinística.\\[2pt]
+            \textit{``A capital do Pará é''} $\to$ \textit{``\,\vGREEDY''}.
+        \end{block}
+        \column{0.5\textwidth}
+        \pause
+        \begin{block}{Amostragem}
+            \footnotesize Sorteia o próximo token de acordo com as probabilidades. Gera variedade, mas pode escolher tokens improváveis.
+        \end{block}
+    \end{columns}
+    \pause
+    \[
+      p_i \;=\; \frac{e^{z_i / T}}{\sum_j e^{z_j / T}}
+    \]
+    \footnotesize $z_i$: escore (\textit{logit}) do token $i$; $T$: \textbf{temperatura}. $T<1$ concentra a probabilidade no favorito; $T>1$ espalha. $T \to 0$ equivale à gulosa.\\
+    \real
+\end{frame}
+
+\begin{frame}{Temperatura na distribuição real}
+    \centering
+    \begin{tikzpicture}
+    \begin{axis}[ybar,width=0.92\linewidth,height=5.1cm,bar width=8pt,ymin=0,ymax=105,
+        ylabel={\footnotesize probabilidade (\%)},xtick=data,xticklabels/.expand once={\labsT},
+        xticklabel style={font=\scriptsize},yticklabel style={font=\scriptsize,/pgf/number format/.cd,fixed,precision=0,fixed zerofill=false},
+        legend style={font=\scriptsize,at={(0.98,0.97)},anchor=north east},legend cell align=left,
+        enlarge x limits=0.18,axis lines*=left]
+        \addplot[fill=mineblue!90,draw=mineblue] coordinates {\barsTa};
+        \addplot[fill=mineblue!50,draw=mineblue] coordinates {\barsTb};
+        \addplot[fill=mineorange!60,draw=mineorange] coordinates {\barsTc};
+        \legend{$T=0{,}5$: \vTmeio,$T=1$: \vTum,$T=1{,}5$: \vTumemeio}
+    \end{axis}
+    \end{tikzpicture}\\
+    \footnotesize Probabilidade de \tk{\textvisiblespace{}Bel} após \textit{``A capital do Pará é''}, recalculada entre os 20 tokens mais prováveis (que somam \vMvinte\ da massa).\\
+    \real
+\end{frame}
+
+\begin{frame}{\textit{Top-k} e \textit{top-p} (núcleo)}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{block}{\textit{Top-k}}
+            \footnotesize Sorteia só entre os $k$ tokens mais prováveis.
+        \end{block}
+        \begin{block}{\textit{Top-p} (Holtzman et al., 2020)}
+            \footnotesize Sorteia só no menor conjunto de tokens cuja probabilidade somada atinge $p$. O tamanho do conjunto se adapta à confiança do modelo.
+        \end{block}
+        \column{0.5\textwidth}
+        \pause
+        \begin{block}{No exemplo real ($p = 0{,}9$)}
+            \footnotesize O núcleo tem só \textbf{2 tokens}: \vNUC, que somam \vNUCM. Todos os outros \vVOC\ menos 2 ficam de fora.
+        \end{block}
+        \reflexao{Num contexto em que o modelo está inseguro, o núcleo de $p = 0{,}9$ fica maior ou menor?}
+    \end{columns}
+    \real
+\end{frame}
+
+\begin{frame}{Questão}
+    \footnotesize
+    Um modelo produz os escores $z = (2,\ 1,\ 0)$ para os tokens $A$, $B$ e $C$.
+    \textbf{Questão:}
+    \begin{enumerate}
+        \item Calcule as probabilidades com $T = 1$.
+        \item Calcule as probabilidades com $T = 0{,}5$.
+        \item Com $T = 1$ e \textit{top-p} $= 0{,}9$, quais tokens podem ser sorteados?
+    \end{enumerate}
+    \pause
+    \begin{block}{Dicas para resolução}
+        \begin{itemize}\footnotesize
+            \item Divida os escores por $T$ antes da exponencial.
+            \item $e^{4} \approx 54{,}598$; $e^{2} \approx 7{,}389$; $e^{1} \approx 2{,}718$; $e^{0} = 1$.
+            \item Para o \textit{top-p}, ordene e some as probabilidades até atingir $0{,}9$.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Resolução}
+    \footnotesize
+    \textbf{Passo 1} ($T=1$): soma $= 7{,}389 + 2{,}718 + 1 = 11{,}107$
+    \[ p_A \approx 0{,}665 \qquad p_B \approx 0{,}245 \qquad p_C \approx 0{,}090 \]
+    \pause
+    \textbf{Passo 2} ($T=0{,}5$): escores viram $(4, 2, 0)$; soma $= 54{,}598 + 7{,}389 + 1 = 62{,}987$
+    \[ p_A \approx 0{,}867 \qquad p_B \approx 0{,}117 \qquad p_C \approx 0{,}016 \]
+    \pause
+    \textbf{Passo 3} (\textit{top-p} $=0{,}9$, com $T=1$): $0{,}665 < 0{,}9$; $0{,}665 + 0{,}245 = 0{,}910 \geq 0{,}9$. O núcleo é $\{A, B\}$.
+    \pause
+    \begin{alertblock}{}
+        \footnotesize Temperatura menor aumentou a vantagem de $A$ (de $0{,}665$ para $0{,}867$): o mesmo efeito que vimos com \tk{\textvisiblespace{}Bel}.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[shrink=5]{Amostragem real: 20 sementes}
+    \footnotesize Contexto: \textit{``Um bom nome para um projeto de IA na UFPA Cametá é''}, com 10 tokens gerados e 20 sementes diferentes.\\[4pt]
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{@{}c c p{9.2cm}@{}}
+        \toprule
+        $T$ & \textbf{distintas} & \textbf{exemplos} \\ \midrule
+        0   & \vDzero/20 & \textit{\vAzero}, sempre a mesma \\
+        0,7 & \vDsete/20 & \textit{\vAsetea} \quad · \quad \textit{\vAseteb} \\
+        1,5 & \vDquinze/20 & \textit{\vAquinzea} \quad · \quad \textit{\vAquinzeb} \\ \bottomrule
+    \end{tabular}\\[6pt]
+    \begin{block}{Leitura}
+        \footnotesize Para tarefas factuais (extração, classificação), use temperatura baixa: a saída é reprodutível. Para ideias, uma temperatura moderada dá variedade; temperatura alta começa a produzir texto sem sentido.
+    \end{block}
+    \real
+\end{frame}
+
+% ==============================================================================
+\section{Prompting e Limites}
+% ==============================================================================
+\begin{frame}
+\centering\Huge\textbf{Prompting\\e Limites}
+\end{frame}
+
+\subsection{Técnicas de prompt}
+\begin{frame}[shrink=5]{\textit{Zero-shot} $\times$ \textit{few-shot}}
+    \footnotesize Tarefa: classificar comentários de estudantes como positivo, negativo ou misto.\\[4pt]
+    \renewcommand{\arraystretch}{1.35}
+    \begin{tabular}{@{}p{4.9cm} p{5.2cm} p{1.9cm}@{}}
+        \toprule
+        \textbf{Comentário} & \textbf{\textit{Zero-shot}} (só a instrução) & \textbf{\textit{Few-shot}} \\ \midrule
+        A professora explica muito bem, mas as provas são longas demais. & ``Eu classificaria esse comentário como `misto'. Por um lado\dots'' & \vFSa \\
+        Adorei o laboratório de IA! & ``O comentário é positivo.'' & \vFSb \\
+        O ar-condicionado da sala nunca funciona. & ``Eu classificaria esse comentário como negativo. A afirmação\dots'' & \vFSc \\ \bottomrule
+    \end{tabular}
+    \pause
+    \begin{block}{Leitura (Brown et al., 2020)}
+        \footnotesize As duas versões acertaram as classes, mas só o \textit{few-shot} devolveu \textbf{uma palavra}, pronta para ser lida por código. Os exemplos no \textit{prompt} ensinam o \textbf{formato} e o rótulo esperado, sem treinar o modelo de novo.
+    \end{block}
+    \real
+\end{frame}
+
+\begin{frame}[shrink=5]{Cadeia de raciocínio (\textit{chain-of-thought})}
+    \footnotesize \textit{``Uma disciplina tem 68 horas-aula. Cada aula dura 2 horas-aula e acontece 2 vezes por semana. Quantas semanas dura a disciplina?''}\quad (correto: \textbf{\vCOTcerto})
+    \begin{columns}[T]
+        \column{0.38\textwidth}
+        \begin{block}{Resposta direta}
+            \footnotesize ``Responda apenas com o número.'' $\to$ \textcolor{minered}{\textbf{\vCOTdireto}}
+        \end{block}
+        \column{0.62\textwidth}
+        \begin{block}{``Pense passo a passo''}
+            \scriptsize $68 \div 2 = 34$ aulas $\cdot$ $34 \div 2 = 17$ semanas $\cdot$ ``Resposta: \textcolor{minegreen}{\textbf{\vCOTcerto}}''
+        \end{block}
+    \end{columns}
+    \pause
+    \begin{alertblock}{Por que funciona (Wei et al., 2022)}
+        \footnotesize Cada token gerado vira contexto para o próximo. Escrever os passos intermediários dá ao modelo ``espaço'' para calcular, em vez de saltar direto para um número provável. Testamos \vCOTn\ problemas, repetindo cada um 6 vezes: o passo a passo acertou em todas as execuções; a resposta direta errou sempre em 2 deles e oscilou no terceiro.
+    \end{alertblock}
+    \real
+\end{frame}
+
+\begin{frame}[fragile]{Papéis e saída estruturada}
+    \begin{columns}
+        \column{0.55\textwidth}
+\begin{lstlisting}
+messages = [
+  {"role": "system",
+   "content": "Você extrai dados e responde apenas em JSON."},
+  {"role": "user",
+   "content": 'Extraia {"disciplina", "carga_horaria", "semestre"} de: "INTELIGÊNCIA ARTIFICIAL (68 horas-aula), ofertada no 7º semestre."'}]
+\end{lstlisting}
+        \column{0.45\textwidth}
+        \begin{block}{Saída real (\texttt{format="json"})}
+            \scriptsize\ttfamily \{"disciplina": "INTELIGÊNCIA ARTIFICIAL",\\ "carga\_horaria": "68 horas-aula",\\ "semestre": "7º"\}
+        \end{block}
+        \real
+    \end{columns}
+    \begin{block}{Boas práticas}
+        \footnotesize A mensagem de \textbf{sistema} define o papel e as regras; a do \textbf{usuário} traz a tarefa. Pedir JSON torna a saída processável por código, mas valide os campos: o formato certo não garante o conteúdo certo.
+    \end{block}
+\end{frame}
+
+\subsection{Limites}
+\begin{frame}{Alucinação: quando o provável não é o verdadeiro}
+    \begin{columns}
+        \column{0.45\textwidth}
+        \footnotesize Continuação de \textit{``\dots da UFPA Campus Cametá é de''}: os candidatos para o número.\\[4pt]
+        O favorito, \tk{600}, tem só \textbf{\vPseis}. Uma distribuição tão espalhada costuma indicar que o modelo \textbf{não sabe}; mesmo assim, a saída gulosa escreve o número com a mesma fluência.\\[4pt]
+        Valor real no PPC: \textbf{3.332 horas}.\\[4pt]
+        \real
+        \column{0.55\textwidth}
+        \begin{tikzpicture}
+        \begin{axis}[ybar,width=\linewidth,height=5cm,bar width=9pt,ymin=0,ymax=11,
+            ylabel={\footnotesize probabilidade (\%)},xtick=data,xticklabels/.expand once={\labsAl},
+            xticklabel style={font=\scriptsize},yticklabel style={font=\scriptsize,/pgf/number format/.cd,fixed,precision=0,fixed zerofill=false},
+            nodes near coords,nodes near coords style={font=\tiny},/pgf/number format/.cd,use comma,fixed,zerofill,precision=1,1000 sep={},/pgfplots/.cd,
+            enlarge x limits=0.08,axis lines*=left]
+            \addplot[fill=minered!60,draw=minered] coordinates {\barsAl};
+        \end{axis}
+        \end{tikzpicture}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Limitações e a ponte para o RAG}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{alertblock}{Limites de um LLM sozinho}
+            \begin{itemize}\footnotesize
+                \item \textbf{Alucinação:} gera o provável, não o verificado.
+                \item \textbf{Corte de conhecimento:} só sabe o que viu no treino. O \textit{template} do \texttt{llama3.2} declara: \textit{Cutting Knowledge Date: December 2023}.
+                \item \textbf{Janela finita:} o que não cabe no contexto não existe para ele.
+                \item \textbf{Sem fontes:} não diz de onde veio a resposta.
+            \end{itemize}
+        \end{alertblock}
+        \column{0.5\textwidth}
+        \pause
+        \begin{block}{O que vimos na Aula 7}
+            \footnotesize O RAG coloca evidências do acervo \textbf{dentro do contexto}. Com o trecho certo do PPC, a pergunta da carga horária foi respondida com \textbf{3.332 horas} e a página citada.
+        \end{block}
+        \begin{block}{E agentes}
+            \footnotesize Um agente deixa o LLM decidir \textbf{quando} buscar ou usar uma ferramenta (\texttt{Agentes.ipynb}).
+        \end{block}
+    \end{columns}
+\end{frame}
+
+% ==============================================================================
+\section{Python para LLMs}
+% ==============================================================================
+\begin{frame}[fragile]{Python: probabilidades do próximo token}
+\begin{lstlisting}
+import requests, math
+r = requests.post("http://localhost:11434/api/generate", json={
+    "model": "llama3.2", "prompt": "A capital do Pará é", "raw": True,
+    "stream": False, "logprobs": True, "top_logprobs": 5,
+    "options": {"num_predict": 1, "temperature": 0, "seed": 42,
+                "num_gpu": 0}}).json()   # CPU: reproduz os números da aula
+for c in r["logprobs"][0]["top_logprobs"]:
+    print(repr(c["token"]), f'{math.exp(c["logprob"]):.3f}')
+\end{lstlisting}
+    \footnotesize Saída: \texttt{' Bel' \vBELd} · \texttt{' a' \vAd} · \texttt{' o' \vOd} · \dots\quad O notebook \texttt{LLM.ipynb} traz todos os passos desta aula. Na GPU, os números mudam um pouco (ex.: \texttt{' Bel'} sai com 0,775): as contas em ponto flutuante seguem outra ordem.\\
+    \real
+\end{frame}
+
+% ==============================================================================
+\section{Referências Bibliográficas}
+% ==============================================================================
+\begin{frame}[shrink=12]{Referências Bibliográficas}
+    \begin{thebibliography}{99}\footnotesize
+        \bibitem{shannon} Shannon, C. E. \textit{A Mathematical Theory of Communication}. Bell System Technical Journal, 1948.
+        \bibitem{bengio} Bengio, Y. et al. \textit{A Neural Probabilistic Language Model}. JMLR, 2003.
+        \bibitem{mikolov} Mikolov, T. et al. \textit{Efficient Estimation of Word Representations in Vector Space}. arXiv:1301.3781, 2013.
+        \bibitem{sennrich} Sennrich, R.; Haddow, B.; Birch, A. \textit{Neural Machine Translation of Rare Words with Subword Units}. ACL, 2016.
+        \bibitem{vaswani} Vaswani, A. et al. \textit{Attention Is All You Need}. NeurIPS, 2017.
+        \bibitem{brown} Brown, T. et al. \textit{Language Models are Few-Shot Learners}. NeurIPS, 2020.
+        \bibitem{kaplan} Kaplan, J. et al. \textit{Scaling Laws for Neural Language Models}. arXiv:2001.08361, 2020.
+        \bibitem{holtzman} Holtzman, A. et al. \textit{The Curious Case of Neural Text Degeneration}. ICLR, 2020.
+        \bibitem{su} Su, J. et al. \textit{RoFormer: Enhanced Transformer with Rotary Position Embedding}. arXiv:2104.09864, 2021.
+        \bibitem{hoffmann} Hoffmann, J. et al. \textit{Training Compute-Optimal Large Language Models}. arXiv:2203.15556, 2022.
+        \bibitem{ouyang} Ouyang, L. et al. \textit{Training Language Models to Follow Instructions with Human Feedback}. NeurIPS, 2022.
+        \bibitem{wei} Wei, J. et al. \textit{Chain-of-Thought Prompting Elicits Reasoning in Large Language Models}. NeurIPS, 2022.
+        \bibitem{ainslie} Ainslie, J. et al. \textit{GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints}. EMNLP, 2023.
+        \bibitem{llama3} Grattafiori, A. et al. \textit{The Llama 3 Herd of Models}. arXiv:2407.21783, 2024.
+        \bibitem{jurafsky} Jurafsky, D.; Martin, J. H. \textit{Speech and Language Processing}. 3. ed. (rascunho on-line), cap. 7--10.
+    \end{thebibliography}
+\end{frame}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\end{document}
