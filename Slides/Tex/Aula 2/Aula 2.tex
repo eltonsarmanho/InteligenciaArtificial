@@ -127,7 +127,7 @@ E-mail: \href{mailto:eltonss@ufpa.br}{eltonss@ufpa.br}\newline
 Ao final da aula, você será capaz de:
 \begin{enumerate}
  \item explicar o que é aprendizado de máquina e distinguir seus três paradigmas.
- \item treinar, validar e testar um modelo supervisionado sem vazamento de dados.
+ \item treinar e testar um modelo supervisionado sem vazamento de dados.
  \item avaliar classificadores e regressores com as métricas adequadas.
  \item descrever como uma rede neural aprende, do perceptron à retropropagação.
  \item aplicar K-Means e PCA para explorar dados sem rótulos.
@@ -333,32 +333,30 @@ queremos aprender uma função $h$ tal que $h(x)\approx y$ \textbf{também para 
 \small A saída é uma \textbf{categoria} na classificação e um \textbf{número} na regressão.
 \end{frame}
 
-\begin{frame}{Treino, validação e teste}
+\begin{frame}{Treino e teste}
 \centering
 \begin{tikzpicture}
-  \fill[azul!25] (0,0) rectangle (6,0.7); \node at (3,0.35) {\small Treino (60\%)};
-  \fill[laranja!30] (6,0) rectangle (8,0.7); \node at (7,0.35) {\small Validação (20\%)};
+  \fill[azul!25] (0,0) rectangle (8,0.7); \node at (4,0.35) {\small Treino (80\%)};
   \fill[verde!30] (8,0) rectangle (10,0.7); \node at (9,0.35) {\small Teste (20\%)};
   \draw (0,0) rectangle (10,0.7);
 \end{tikzpicture}
 \begin{itemize}
  \item \textbf{Treino}: ajusta os parâmetros.
- \item \textbf{Validação}: escolhe modelo e hiperparâmetros.
  \item \textbf{Teste}: estima o desempenho final, e deve ser usado uma única vez.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Subajuste e sobreajuste}
+\begin{frame}{Underfitting e overfitting}
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[group style={group size=3 by 1, horizontal sep=5mm}, width=0.33\textwidth, height=0.3\textwidth, xmin=0, xmax=6, ymin=-0.5, ymax=5.5, xtick=\empty, ytick=\empty, axis lines=left, title style={font=\footnotesize\bfseries}]
-\nextgroupplot[title={Subajuste}]
+\nextgroupplot[title={Underfitting}]
 \addplot[only marks, mark=*, mark size=1.4pt, azul] coordinates {(0.5,1.6)(1,2.3)(1.5,2.6)(2,3.9)(2.5,3.4)(3,4.6)(3.5,3.6)(4,3.2)(4.5,2.2)(5.5,0.7)};
 \addplot[thick, vermelho, domain=0.3:5.7] {3.10455-0.10519*x};
 \nextgroupplot[title={Bom ajuste}]
 \addplot[only marks, mark=*, mark size=1.4pt, azul] coordinates {(0.5,1.6)(1,2.3)(1.5,2.6)(2,3.9)(2.5,3.4)(3,4.6)(3.5,3.6)(4,3.2)(4.5,2.2)(5.5,0.7)};
 \addplot[thick, verde, domain=0.3:5.7] {0.24866+2.57118*x-0.45694*x^2};
-\nextgroupplot[title={Sobreajuste}]
+\nextgroupplot[title={Overfitting}]
 \addplot[only marks, mark=*, mark size=1.4pt, azul] coordinates {(0.5,1.6)(1,2.3)(1.5,2.6)(2,3.9)(2.5,3.4)(3,4.6)(3.5,3.6)(4,3.2)(4.5,2.2)(5.5,0.7)};
 \addplot[thick, laranja, smooth, tension=0.6] coordinates {(0.5,1.6)(1,2.3)(1.5,2.6)(2,3.9)(2.5,3.4)(3,4.6)(3.5,3.6)(4,3.2)(4.5,2.2)(5.5,0.7)};
 \end{groupplot}
@@ -370,11 +368,11 @@ queremos aprender uma função $h$ tal que $h(x)\approx y$ \textbf{também para 
 \small
 \begin{tabularx}{\textwidth}{@{}l c c X@{}}
 \toprule
-\textbf{Situação} & \textbf{Erro treino} & \textbf{Erro validação} & \textbf{O que fazer} \\
+\textbf{Situação} & \textbf{Erro treino} & \textbf{Erro teste} & \textbf{O que fazer} \\
 \midrule
-Subajuste & alto & alto & modelo mais flexível, mais atributos \\
+Underfitting & alto & alto & modelo mais flexível, mais atributos \\
 Bom ajuste & baixo & baixo & manter e testar \\
-Sobreajuste & baixo & alto & mais dados, regularização, modelo mais simples \\
+Overfitting & baixo & alto & mais dados, regularização, modelo mais simples \\
 \bottomrule
 \end{tabularx}
 \end{frame}
@@ -386,7 +384,7 @@ Sobreajuste & baixo & alto & mais dados, regularização, modelo mais simples \\
 \begin{axis}[width=\textwidth, height=0.8\textwidth, axis lines=left, xlabel={Complexidade do modelo}, ylabel={Erro}, xtick=\empty, ytick=\empty, legend pos=north west, legend style={font=\tiny, draw=none, fill=none}, ymin=0, ymax=3.2, xmin=0, xmax=6]
 \addplot[thick, azul, domain=0.2:5.8] {2.6*exp(-0.6*x)+0.25};
 \addplot[thick, laranja, domain=0.2:5.8] {2.6*exp(-0.6*x)+0.35+0.02*x^3};
-\legend{Treino, Validação}
+\legend{Treino, Teste}
 \end{axis}
 \end{tikzpicture}
 \column{0.48\textwidth}
@@ -402,12 +400,12 @@ Erro esperado com perda quadrática:
 \end{frame}
 
 \begin{frame}{Memorizar não é entender}
-\textbf{Como evitar o sobreajuste}
+\textbf{Como evitar o overfitting}
 \begin{itemize}
  \item Mais dados de boa qualidade.
  \item Modelo mais simples.
  \item Regularização.
- \item Validação cruzada.
+ \item Teste cruzado.
 \end{itemize}
 \begin{reflexao}
 Um aluno que decorou a prova de 2023 está preparado para a de 2024?
@@ -483,7 +481,7 @@ Um aluno que decorou a prova de 2023 está preparado para a de 2024?
 
 \begin{frame}{5. Modelos, 6. Ajuste e 7. Apresentação}
 \begin{itemize}
- \item Treine modelos de famílias diferentes e compare por validação cruzada.
+ \item Treine modelos de famílias diferentes e compare por teste cruzado.
  \item Ajuste os hiperparâmetros dos três a cinco melhores candidatos.
  \item Combine modelos (\textit{ensembles}) se houver ganho real.
  \item Documente suposições e limitações antes de apresentar.
@@ -530,7 +528,7 @@ pipe.fit(X_tr, y_tr)
 \textbf{Algoritmo} & \textbf{Ideia} & \textbf{Ponto de atenção} \\
 \midrule
 k-NN & classe dos $k$ vizinhos mais próximos & lento com muitos dados e sensível à escala \\
-Árvore de decisão & perguntas sucessivas sobre atributos & tende ao sobreajuste \\
+Árvore de decisão & perguntas sucessivas sobre atributos & tende ao overfitting \\
 \textit{Random Forest} & muitas árvores votando & menos interpretável \\
 Naive Bayes & probabilidades com atributos independentes & independência raramente vale \\
 SVM & margem máxima entre classes & custo alto em bases grandes \\
@@ -562,13 +560,13 @@ print(classification_report(y_te, grid.predict(X_te)))
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Seleção e Validação}
+\section{Seleção e Teste}
 
 \begin{frame}{Seleção de modelos}
 \begin{itemize}
  \item \textbf{Seleção}: escolher a família de hipóteses (árvores, redes, regressão).
  \item \textbf{Otimização}: achar a melhor hipótese dentro da família escolhida.
- \item O desafio é equilibrar subajuste e sobreajuste.
+ \item O desafio é equilibrar underfitting e overfitting.
 \end{itemize}
 \vspace{2mm}
 \begin{tabularx}{\textwidth}{@{}l X X@{}}
@@ -581,7 +579,7 @@ Exemplos & pesos, coeficientes & $k$ do k-NN, profundidade, $\lambda$ \\
 \end{tabularx}
 \end{frame}
 
-\begin{frame}{Validação cruzada com $k$ partições}
+\begin{frame}{Teste cruzado com $k$ partições}
 \centering
 \begin{tikzpicture}[x=1.7cm]
   \foreach \r in {1,...,5} {
@@ -596,19 +594,19 @@ Exemplos & pesos, coeficientes & $k$ do k-NN, profundidade, $\lambda$ \\
     \node[anchor=east, font=\scriptsize] at (-0.1,-\r*0.55+0.22) {Rodada \r};
   }
   \fill[azul!25] (0,-4) rectangle (0.4,-3.75); \node[anchor=west, font=\scriptsize] at (0.45,-3.87) {treino};
-  \fill[laranja!45] (1.5,-4) rectangle (1.9,-3.75); \node[anchor=west, font=\scriptsize] at (1.95,-3.87) {validação};
+  \fill[laranja!45] (1.5,-4) rectangle (1.9,-3.75); \node[anchor=west, font=\scriptsize] at (1.95,-3.87) {teste};
 \end{tikzpicture}
 
 \begin{itemize}\small
- \item Cada partição serve uma vez como validação.
+ \item Cada partição serve uma vez como teste.
  \item O resultado é a média das $k$ notas, com seu desvio padrão.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Validação cruzada: um exemplo numérico}
-Cinco rodadas, acurácias de validação: $0{,}84$, $0{,}88$, $0{,}80$, $0{,}86$, $0{,}82$.
+\begin{frame}{Teste cruzado: um exemplo numérico}
+Cinco rodadas, acurácias de teste: $0{,}84$, $0{,}88$, $0{,}80$, $0{,}86$, $0{,}82$.
 \[ \bar{a}=0{,}84, \qquad s=\sqrt{\frac{0+0{,}0016+0{,}0016+0{,}0004+0{,}0004}{4}}\approx 0{,}032. \]
-Relatamos $0{,}84\pm0{,}03$. A validação cruzada reduz a variância da estimativa de desempenho, porque não depende de uma única divisão.
+Relatamos $0{,}84\pm0{,}03$. O teste cruzado reduz a variância da estimativa de desempenho, porque não depende de uma única divisão.
 \begin{reflexao}
 \small Dados de séries temporais podem ser embaralhados antes da divisão? Por quê?
 \end{reflexao}
@@ -627,7 +625,7 @@ Relatamos $0{,}84\pm0{,}03$. A validação cruzada reduz a variância da estimat
 \end{groupplot}
 \end{tikzpicture}
 
-{\scriptsize\textcolor{azul}{azul}: erro de treino. \textcolor{laranja}{laranja}: erro de validação (curvas ilustrativas).}
+{\scriptsize\textcolor{azul}{azul}: erro de treino. \textcolor{laranja}{laranja}: erro de teste (curvas ilustrativas).}
 
 \small No viés alto, mais dados não ajudam. Na variância alta, mais dados ajudam.
 \end{frame}
@@ -837,7 +835,7 @@ Cada $\beta_j$ mede o efeito de $x_j$ \textbf{mantendo os demais fixos}. Exemplo
 O modelo é \textbf{linear nos coeficientes}, mesmo com curva em $x$. Por isso os mesmos mínimos quadrados se aplicam.
 
 \vspace{2mm}
-\small Na figura de subajuste e sobreajuste, a reta tem $\text{SSE}=11{,}9$ e a parábola $1{,}3$.
+\small Na figura de underfitting e overfitting, a reta tem $\text{SSE}=11{,}9$ e a parábola $1{,}3$.
 \column{0.5\textwidth}
 \begin{tikzpicture}
 \begin{axis}[width=\textwidth, height=0.85\textwidth, axis lines=left, xtick=\empty, ytick=\empty, xlabel={$x$}, ylabel={$y$}, ymin=-0.5, ymax=5.5, xmin=0, xmax=6]
@@ -859,7 +857,7 @@ Penaliza coeficientes grandes para reduzir a variância:
  \item Ridge encolhe todos os coeficientes.
  \item Lasso pode zerar coeficientes e, assim, selecionar atributos.
  \item Padronize os atributos antes e não penalize o intercepto.
- \item Escolha $\lambda$ por validação cruzada.
+ \item Escolha $\lambda$ por teste cruzado.
 \end{itemize}
 \end{frame}
 
@@ -1205,11 +1203,11 @@ w_{\text{novo}}&=0{,}5-\eta\cdot(-0{,}0887)\approx0{,}589 \quad(\eta=1).
 \end{frame}
 \includepdf[pages=-, frame, scale=0.9]{figs/retropropagacao.pdf}
 
-\begin{frame}{Sobreajuste em redes neurais}
+\begin{frame}{Overfitting em redes neurais}
 \begin{columns}[c]
 \column{0.5\textwidth}
 \begin{itemize}
- \item \textbf{Parada antecipada}: interrompa quando o erro de validação deixa de cair.
+ \item \textbf{Parada antecipada}: interrompa quando o erro de teste deixa de cair.
  \item \textbf{Regularização L2} nos pesos.
  \item \textbf{\textit{Dropout}}: desliga neurônios aleatoriamente no treino.
  \item \textbf{Aumento de dados}.
@@ -1221,7 +1219,7 @@ w_{\text{novo}}&=0{,}5-\eta\cdot(-0{,}0887)\approx0{,}589 \quad(\eta=1).
 \addplot[thick, laranja, domain=0:10] {0.9*exp(-0.5*x)+0.25+0.012*x^2};
 \draw[dashed] (axis cs:3.6,0) -- (axis cs:3.6,1);
 \node[font=\tiny, rotate=90, anchor=south] at (axis cs:3.6,0.5) {parar aqui};
-\legend{Treino, Validação}
+\legend{Treino, Teste}
 \end{axis}
 \end{tikzpicture}
 \end{columns}
@@ -1429,7 +1427,7 @@ Atribuição: $C_1=\{1,3,4\}$ e $C_2=\{10\}$. Novos centróides: $\mu_1=8/3\appr
 \textbf{Tema} & \textbf{Ideia central} & \textbf{Pergunta-chave} \\
 \midrule
 Supervisionado & aprender $x\mapsto y$ com exemplos & o modelo generaliza? \\
-Validação & separar treino, validação e teste & há vazamento de dados? \\
+Teste & separar treino e teste & há vazamento de dados? \\
 Classificação & matriz de confusão e métricas & qual erro custa mais? \\
 Regressão & mínimos quadrados e resíduos & as suposições valem? \\
 Redes neurais & camadas, perda e gradiente & o que aprendeu, e com que custo? \\
