@@ -405,7 +405,7 @@ Erro esperado com perda quadrática:
  \item Mais dados de boa qualidade.
  \item Modelo mais simples.
  \item Regularização.
- \item Teste cruzado.
+ \item Cross-validation.
 \end{itemize}
 \begin{reflexao}
 Um aluno que decorou a prova de 2023 está preparado para a de 2024?
@@ -481,7 +481,7 @@ Um aluno que decorou a prova de 2023 está preparado para a de 2024?
 
 \begin{frame}{5. Modelos, 6. Ajuste e 7. Apresentação}
 \begin{itemize}
- \item Treine modelos de famílias diferentes e compare por teste cruzado.
+ \item Treine modelos de famílias diferentes e compare por cross-validation.
  \item Ajuste os hiperparâmetros dos três a cinco melhores candidatos.
  \item Combine modelos (\textit{ensembles}) se houver ganho real.
  \item Documente suposições e limitações antes de apresentar.
@@ -579,7 +579,7 @@ Exemplos & pesos, coeficientes & $k$ do k-NN, profundidade, $\lambda$ \\
 \end{tabularx}
 \end{frame}
 
-\begin{frame}{Teste cruzado com $k$ partições}
+\begin{frame}{Cross-validation com $k$ partições}
 \centering
 \begin{tikzpicture}[x=1.7cm]
   \foreach \r in {1,...,5} {
@@ -603,10 +603,10 @@ Exemplos & pesos, coeficientes & $k$ do k-NN, profundidade, $\lambda$ \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Teste cruzado: um exemplo numérico}
+\begin{frame}{Cross-validation: um exemplo numérico}
 Cinco rodadas, acurácias de teste: $0{,}84$, $0{,}88$, $0{,}80$, $0{,}86$, $0{,}82$.
 \[ \bar{a}=0{,}84, \qquad s=\sqrt{\frac{0+0{,}0016+0{,}0016+0{,}0004+0{,}0004}{4}}\approx 0{,}032. \]
-Relatamos $0{,}84\pm0{,}03$. O teste cruzado reduz a variância da estimativa de desempenho, porque não depende de uma única divisão.
+Relatamos $0{,}84\pm0{,}03$. A cross-validation reduz a variância da estimativa de desempenho, porque não depende de uma única divisão.
 \begin{reflexao}
 \small Dados de séries temporais podem ser embaralhados antes da divisão? Por quê?
 \end{reflexao}
@@ -633,14 +633,14 @@ Relatamos $0{,}84\pm0{,}03$. O teste cruzado reduz a variância da estimativa de
 \begin{frame}{Busca de hiperparâmetros}
 \centering
 \begin{tikzpicture}[scale=0.9]
-  \draw (0,0) rectangle (3,3); \node[above] at (1.5,3) {\footnotesize Grade};
+  \draw (0,0) rectangle (3,3); \node[above] at (1.5,3) {\footnotesize Grid};
   \foreach \x in {0.5,1.5,2.5} \foreach \y in {0.5,1.5,2.5} \fill[azul] (\x,\y) circle (2pt);
-  \draw (4.5,0) rectangle (7.5,3); \node[above] at (6,3) {\footnotesize Aleatória};
+  \draw (4.5,0) rectangle (7.5,3); \node[above] at (6,3) {\footnotesize Random};
   \foreach \x/\y in {0.4/2.6,1.1/0.7,1.6/1.9,2.2/0.3,2.7/2.2,0.8/1.3,1.9/2.8,2.5/1.1,0.3/0.4} \fill[laranja] ({4.5+\x},\y) circle (2pt);
   \node[font=\scriptsize] at (1.5,-0.35) {$\lambda$};
 \end{tikzpicture}
 
-\small Com a mesma quantidade de testes, a busca aleatória explora mais valores distintos de cada hiperparâmetro. A otimização bayesiana usa os resultados anteriores para escolher o próximo teste.
+\small Com a mesma quantidade de testes, a random search explora mais valores distintos de cada hiperparâmetro. A otimização bayesiana usa os resultados anteriores para escolher o próximo teste.
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -661,6 +661,22 @@ Relatamos $0{,}84\pm0{,}03$. O teste cruzado reduz a variância da estimativa de
 \end{tikzpicture}
 
 \small A diagonal mostra os acertos. Fora dela estão os dois tipos de erro.
+\end{frame}
+
+\begin{frame}{VP, FN, FP, VN e suas equações}
+\begin{itemize}
+ \item \textbf{VP (verdadeiro positivo)}: positivo previsto e real positivo.
+ \item \textbf{FN (falso negativo)}: negativo previsto, mas real positivo.
+ \item \textbf{FP (falso positivo)}: positivo previsto, mas real negativo.
+ \item \textbf{VN (verdadeiro negativo)}: negativo previsto e real negativo.
+\end{itemize}
+\vspace{2mm}
+\begin{align*}
+\text{Acurácia} &= \frac{VP+VN}{VP+FN+FP+VN} \\
+\text{Precisão} &= \frac{VP}{VP+FP} \\
+\text{Recall} &= \frac{VP}{VP+FN} \\
+F_1 &= \frac{2\cdot\text{Precisão}\cdot\text{Recall}}{\text{Precisão}+\text{Recall}}
+\end{align*}
 \end{frame}
 
 \begin{frame}{Exemplo: filtro de spam}
@@ -857,7 +873,7 @@ Penaliza coeficientes grandes para reduzir a variância:
  \item Ridge encolhe todos os coeficientes.
  \item Lasso pode zerar coeficientes e, assim, selecionar atributos.
  \item Padronize os atributos antes e não penalize o intercepto.
- \item Escolha $\lambda$ por teste cruzado.
+ \item Escolha $\lambda$ por cross-validation.
 \end{itemize}
 \end{frame}
 
@@ -885,32 +901,32 @@ Prevemos a classe 1 quando $P\ge 0{,}5$, isto é, quando $\mathbf{w}^\top\mathbf
 \textbf{Suposição} & \textbf{Como verificar} & \textbf{Possível remédio} \\
 \midrule
 Linearidade (nos parâmetros) & resíduos contra valores previstos & transformar variáveis ou incluir termos polinomiais \\
-Independência dos resíduos & Durbin-Watson próximo de 2 & modelos para séries temporais \\
-Homocedasticidade & resíduos com dispersão constante & transformação logarítmica ou mínimos quadrados ponderados \\
-Normalidade dos resíduos & gráfico Q-Q, Shapiro-Wilk & transformar a resposta \\
-Sem multicolinearidade forte & VIF acima de 5 a 10 é alerta & remover ou combinar atributos, Ridge \\
 \bottomrule
 \end{tabularx}
-\end{frame}
 
-\begin{frame}{Diagnóstico por resíduos}
+\vspace{1mm}
 \centering
 \begin{tikzpicture}
-\begin{groupplot}[group style={group size=3 by 1, horizontal sep=5mm}, width=0.33\textwidth, height=0.28\textwidth, xtick=\empty, ytick=\empty, axis lines=left, xmin=0, xmax=6, ymin=-2.2, ymax=2.2, title style={font=\footnotesize\bfseries}]
-\nextgroupplot[title={Adequado}]
-\addplot[only marks, mark=*, mark size=1.3pt, azul] coordinates {(0.5,0.3)(1,-0.4)(1.5,0.5)(2,-0.2)(2.5,0.1)(3,-0.5)(3.5,0.4)(4,-0.3)(4.5,0.6)(5,-0.1)(5.5,0.2)};
-\addplot[dashed, gray] {0};
-\nextgroupplot[title={Funil}]
-\addplot[only marks, mark=*, mark size=1.3pt, laranja] coordinates {(0.5,0.1)(1,-0.15)(1.5,0.3)(2,-0.4)(2.5,0.6)(3,-0.8)(3.5,1.0)(4,-1.2)(4.5,1.5)(5,-1.7)(5.5,2.0)};
-\addplot[dashed, gray] {0};
-\nextgroupplot[title={Curva}]
-\addplot[only marks, mark=*, mark size=1.3pt, vermelho] coordinates {(0.5,1.6)(1,0.9)(1.5,0.4)(2,-0.2)(2.5,-0.7)(3,-0.9)(3.5,-0.7)(4,-0.2)(4.5,0.5)(5,1.1)(5.5,1.8)};
-\addplot[dashed, gray] {0};
+\begin{groupplot}[group style={group size=2 by 2, horizontal sep=12mm, vertical sep=6mm}, width=0.42\textwidth, height=0.2\textwidth, xtick=\empty, ytick=\empty, axis lines=left, xmin=0, xmax=6, title style={font=\scriptsize\bfseries}, label style={font=\tiny}]
+\nextgroupplot[title={\textcolor{verde}{OK}: relação linear}, ymin=0, ymax=4, ylabel={$y$}]
+\addplot[only marks, mark=*, mark size=1.1pt, azul] coordinates {(0,1.2)(1,1.2)(2,2.1)(3,2.8)(4,2.8)(5,3.6)(6,3.9)};
+\addplot[thick, vermelho, domain=0:6] {1+0.5*x};
+\nextgroupplot[title={\textcolor{vermelho}{Não OK}: relação curva}, ymin=0, ymax=4]
+\addplot[only marks, mark=*, mark size=1.1pt, azul] coordinates {(0,2.75)(1,1.5)(2,0.75)(3,0.5)(4,0.75)(5,1.5)(6,2.75)};
+\addplot[thick, vermelho, domain=0:6] {1.4};
+\nextgroupplot[ymin=-1.5, ymax=1.5, ylabel={resíduo}, xlabel={$x$}]
+\addplot[dashed, gray, domain=0:6] {0};
+\addplot[only marks, mark=*, mark size=1.1pt, vermelho] coordinates {(0,0.2)(1,-0.3)(2,0.1)(3,0.3)(4,-0.2)(5,0.1)(6,-0.1)};
+\nextgroupplot[ymin=-1.5, ymax=1.5, xlabel={$x$}]
+\addplot[dashed, gray, domain=0:6] {0};
+\addplot[only marks, mark=*, mark size=1.1pt, vermelho] coordinates {(0,1.35)(1,0.1)(2,-0.65)(3,-0.9)(4,-0.65)(5,0.1)(6,1.35)};
 \end{groupplot}
 \end{tikzpicture}
 
-\small Funil indica variância não constante. Curva indica relação não linear omitida.
+\small Esquerda: os resíduos são aleatórios em torno de zero. Direita: os resíduos formam uma curva em U, indicando não linearidade.
 \end{frame}
+
+
 
 \begin{frame}{Exercício}
 Ajuste uma reta aos pontos $(1,2),(2,3),(3,5),(4,6)$ e preveja $y$ para $x=5$.
@@ -1325,20 +1341,7 @@ Particiona os dados em $k$ grupos que minimizam a soma dos quadrados intragrupo:
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{K-Means: exemplo numérico}
-Dados em uma dimensão: $1,2,6,7,8$ com $k=2$ e centróides iniciais $\mu_1=1$ e $\mu_2=2$.
-\small
-\begin{tabularx}{\textwidth}{@{}l X@{}}
-\toprule
-\textbf{Iteração} & \textbf{Resultado} \\
-\midrule
-1 & $C_1=\{1\}$, $C_2=\{2,6,7,8\}$, novos centróides $1$ e $5{,}75$ \\
-2 & $C_1=\{1,2\}$, $C_2=\{6,7,8\}$, novos centróides $1{,}5$ e $7$ \\
-3 & atribuições iguais, o algoritmo convergiu \\
-\bottomrule
-\end{tabularx}
-\[ \mathcal{J}=(0{,}25+0{,}25)+(1+0+1)=2{,}5. \]
-\end{frame}
+
 
 \begin{frame}{Limitações e escolha de $k$}
 \begin{columns}[c]
