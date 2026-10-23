@@ -802,19 +802,6 @@ Os coeficientes minimizam a soma dos quadrados dos resíduos (mínimos quadrados
 \end{columns}
 \end{frame}
 
-\begin{frame}{Exemplo resolvido}
-Dados $(x,y)$: $(1,2),(2,3),(3,5),(4,4),(5,6)$. Médias: $\bar{x}=3$ e $\bar{y}=4$.
-\[ \hat\beta_1=\frac{\sum(x_i-\bar{x})(y_i-\bar{y})}{\sum(x_i-\bar{x})^2}=\frac{9}{10}=0{,}9, \qquad \hat\beta_0=\bar{y}-\hat\beta_1\bar{x}=1{,}3. \]
-\small
-\begin{tabular}{@{}c|ccccc@{}}
-\toprule
-$x$ & 1 & 2 & 3 & 4 & 5 \\
-$y$ & 2 & 3 & 5 & 4 & 6 \\
-$\hat{y}$ & 2,2 & 3,1 & 4,0 & 4,9 & 5,8 \\
-resíduo & $-0{,}2$ & $-0{,}1$ & $1{,}0$ & $-0{,}9$ & $0{,}2$ \\
-\bottomrule
-\end{tabular}
-\end{frame}
 
 \begin{frame}{Métricas de regressão}
 \small
@@ -864,16 +851,31 @@ O modelo é \textbf{linear nos coeficientes}, mesmo com curva em $x$. Por isso o
 \end{frame}
 
 \begin{frame}{Regularização}
-Penaliza coeficientes grandes para reduzir a variância:
-\begin{align*}
-\text{Ridge (L2):}&\quad \|\mathbf{y}-\mathbf{X}\boldsymbol\beta\|^2+\lambda\|\boldsymbol\beta\|_2^2\\
-\text{Lasso (L1):}&\quad \|\mathbf{y}-\mathbf{X}\boldsymbol\beta\|^2+\lambda\|\boldsymbol\beta\|_1
-\end{align*}
+\small
+\textbf{Ideia:} somar à perda uma \textbf{penalidade} sobre o tamanho dos coeficientes. Coeficientes grandes costumam causar overfitting.
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{Ridge (L2)}
+$\|\mathbf{y}-\mathbf{X}\boldsymbol\beta\|^2+\lambda\sum_j\beta_j^2$
 \begin{itemize}
- \item Ridge encolhe todos os coeficientes.
- \item Lasso pode zerar coeficientes e, assim, selecionar atributos.
- \item Padronize os atributos antes e não penalize o intercepto.
- \item Escolha $\lambda$ por cross-validation.
+ \item Penaliza o \textbf{quadrado} dos coeficientes.
+ \item \textbf{Impacto:} encolhe todos, sem zerá-los.
+ \item \textbf{Útil quando:} atributos são correlacionados.
+\end{itemize}
+\end{block}
+\column{0.48\textwidth}
+\begin{block}{Lasso (L1)}
+$\|\mathbf{y}-\mathbf{X}\boldsymbol\beta\|^2+\lambda\sum_j|\beta_j|$
+\begin{itemize}
+ \item Penaliza o \textbf{valor absoluto} dos coeficientes.
+ \item \textbf{Impacto:} zera coeficientes pouco úteis.
+ \item \textbf{Útil quando:} há muitos atributos e queremos selecionar.
+\end{itemize}
+\end{block}
+\end{columns}
+\begin{itemize}
+ \item $\lambda$ controla a força: $\lambda=0$ não penaliza; $\lambda$ grande leva a underfitting.
+ \item Padronize os atributos e escolha $\lambda$ por cross-validation.
 \end{itemize}
 \end{frame}
 
@@ -926,16 +928,6 @@ Linearidade (nos parâmetros) & resíduos contra valores previstos & transformar
 \small Esquerda: os resíduos são aleatórios em torno de zero. Direita: os resíduos formam uma curva em U, indicando não linearidade.
 \end{frame}
 
-
-
-\begin{frame}{Exercício}
-Ajuste uma reta aos pontos $(1,2),(2,3),(3,5),(4,6)$ e preveja $y$ para $x=5$.
-
-\pause
-\begin{block}{Resposta}
-$\bar{x}=2{,}5$, $\bar{y}=4$, $\hat\beta_1=7/5=1{,}4$, $\hat\beta_0=0{,}5$. Previsão: $\hat{y}(5)=7{,}5$. Os resíduos são $0{,}1$, $-0{,}3$, $0{,}3$ e $-0{,}1$, logo $\text{SSE}=0{,}2$ e $R^2=1-0{,}2/10=0{,}98$.
-\end{block}
-\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Redes Neurais}
@@ -1034,99 +1026,187 @@ Geometricamente, a equação $\mathbf{w}^\top\mathbf{x}+b=0$ é uma reta que sep
 \end{columns}
 \end{frame}
 
-\begin{frame}{OR e AND com um neurônio}
-Com $u=w_1x_1+w_2x_2+b$ e saída $1$ se $u\ge0$:
+\begin{frame}{Porta AND com um neurônio}
+Escolhemos $w_1=1$, $w_2=1$ e $b=-1{,}5$. O neurônio calcula
+\[ u = 1\cdot x_1 + 1\cdot x_2 - 1{,}5, \qquad y=\begin{cases}1 & u\ge 0\\ 0 & u<0\end{cases} \]
 \begin{center}
-\begin{tabular}{@{}cc|cc|cc@{}}
+\begin{tabular}{@{}cc|c|c@{}}
 \toprule
-$x_1$ & $x_2$ & \multicolumn{2}{c|}{OR: $w=(1,1),\ b=-0{,}5$} & \multicolumn{2}{c}{AND: $w=(1,1),\ b=-1{,}5$} \\
- & & $u$ & $y$ & $u$ & $y$ \\
+$x_1$ & $x_2$ & $u = x_1 + x_2 - 1{,}5$ & $y$ \\
 \midrule
-0 & 0 & $-0{,}5$ & 0 & $-1{,}5$ & 0 \\
-0 & 1 & $0{,}5$ & 1 & $-0{,}5$ & 0 \\
-1 & 0 & $0{,}5$ & 1 & $-0{,}5$ & 0 \\
-1 & 1 & $1{,}5$ & 1 & $0{,}5$ & 1 \\
+0 & 0 & $0+0-1{,}5=-1{,}5$ & 0 \\
+0 & 1 & $0+1-1{,}5=-0{,}5$ & 0 \\
+1 & 0 & $1+0-1{,}5=-0{,}5$ & 0 \\
+1 & 1 & $1+1-1{,}5=+0{,}5$ & 1 \\
 \bottomrule
 \end{tabular}
 \end{center}
-\small O viés $b$ desloca a reta e faz o papel do antigo limiar $\theta=-b$.
+Só a entrada $(1,1)$ soma o bastante para vencer o viés $b=-1{,}5$, então a saída é 1 apenas quando $x_1$ \textbf{e} $x_2$ são 1.
 \end{frame}
 
 \begin{frame}{Regra de aprendizagem do Perceptron}
-Para cada exemplo $(\mathbf{x},y)$ com previsão $\hat{y}$:
-\[ \mathbf{w}\leftarrow\mathbf{w}+\eta\,(y-\hat{y})\,\mathbf{x}, \qquad b\leftarrow b+\eta\,(y-\hat{y}). \]
+\textbf{O que cada símbolo significa}
 \begin{itemize}
- \item Se acertou, nada muda.
- \item Se errou, a reta se move em direção ao exemplo mal classificado.
- \item Se os dados são linearmente separáveis, o algoritmo converge em um número finito de passos.
+ \item $x_1,x_2$: entradas do exemplo; $w_1,w_2$: pesos (importância de cada entrada); $b$: viés.
+ \item $u=w_1x_1+w_2x_2+b$: soma ponderada. A previsão é $\hat y=1$ se $u\ge0$ e $\hat y=0$ caso contrário.
+ \item $y$: resposta correta (alvo); $e=y-\hat y$: \textbf{erro}, que vale $0$, $+1$ ou $-1$.
+ \item $\eta$: taxa de aprendizado, o tamanho do passo (aqui, $\eta=1$).
+\end{itemize}
+\textbf{Atualização, após cada exemplo:}
+\[ w_i \leftarrow w_i+\eta\,e\,x_i, \qquad b \leftarrow b+\eta\,e. \]
+\end{frame}
+
+\begin{frame}{Por que a regra funciona}
+\begin{itemize}
+ \item $e=0$ (acertou): $w$ e $b$ não mudam.
+ \item $e=+1$ (previu 0, mas era 1): $u$ estava baixo demais. Somamos $\eta x_i$ aos pesos e $\eta$ ao viés, e $u$ \textbf{aumenta}.
+ \item $e=-1$ (previu 1, mas era 0): $u$ estava alto demais. Subtraímos, e $u$ \textbf{diminui}.
+ \item Se $x_i=0$, o peso $w_i$ não muda, pois aquela entrada não contribuiu para o erro.
+ \item O viés $b$ se comporta como um peso de uma entrada que vale sempre 1.
+ \item Se os dados são linearmente separáveis, o Perceptron converge em um número finito de passos.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Exemplo resolvido: aprendendo AND}
-Início: $w_1=w_2=0{,}2$, $b=-0{,}5$ e $\eta=0{,}1$.
-\footnotesize
+\begin{frame}{Exemplo resolvido: aprendendo AND (passo a passo)}
+\small
+\textbf{Dados:} alvo $y=1$ só para $(1,1)$. \textbf{Início:} $w_1=w_2=0$, $b=0$, $\eta=1$.\\[1mm]
+Para cada linha: (1) calcule $u=w_1x_1+w_2x_2+b$ com os pesos atuais; (2) $\hat y=1$ se $u\ge0$, senão $0$; (3) $e=y-\hat y$; (4) se $e\ne0$, atualize $w_1\leftarrow w_1+e\,x_1$, $w_2\leftarrow w_2+e\,x_2$, $b\leftarrow b+e$.\\[1mm]
+As colunas $w_1,w_2,b$ mostram os valores \textbf{depois} da linha. Uma \textbf{época} é uma passada pelos 4 exemplos.\\[1mm]
+\textbf{Exemplo da 1ª linha:} $u=0\cdot0+0\cdot0+0=0\ge0\Rightarrow\hat y=1$, mas $y=0$. Logo $e=-1$ e $b\leftarrow0+(-1)=-1$. Os pesos $w_1,w_2$ não mudam, porque $x_1=x_2=0$.
+\end{frame}
+
+\begin{frame}{Aprendendo AND: época 1}
+\scriptsize
 \begin{center}
-\begin{tabular}{@{}cc c c c c c@{}}
+\begin{tabular}{@{}cc c l c c ccc@{}}
 \toprule
-$x_1$ & $x_2$ & alvo & $u$ & $\hat{y}$ & erro & novos $w$ e $b$ \\
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
 \midrule
-0 & 0 & 0 & $-0{,}5$ & 0 & 0 & sem mudança \\
-0 & 1 & 0 & $-0{,}3$ & 0 & 0 & sem mudança \\
-1 & 0 & 0 & $-0{,}3$ & 0 & 0 & sem mudança \\
-1 & 1 & 1 & $-0{,}1$ & 0 & $+1$ & $w_1=w_2=0{,}3$, $b=-0{,}4$ \\
-\midrule
-1 & 1 & 1 & $0{,}2$ & 1 & 0 & convergiu \\
+0 & 0 & 0 & $(\textcolor{azul}{0})(0)+(\textcolor{verde}{0})(0)+(\textcolor{vermelho}{0})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{0}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{0}+(\textcolor{laranja}{-1})(0)=\textcolor{azul}{0}$,\; $w_2=\textcolor{verde}{0}+(\textcolor{laranja}{-1})(0)=\textcolor{verde}{0}$,\; $b=\textcolor{vermelho}{0}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-1}$} \\
+0 & 1 & 0 & $(\textcolor{azul}{0})(0)+(\textcolor{verde}{0})(1)+(\textcolor{vermelho}{-1})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{0}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 0 & 0 & $(\textcolor{azul}{0})(1)+(\textcolor{verde}{0})(0)+(\textcolor{vermelho}{-1})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{0}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 1 & 1 & $(\textcolor{azul}{0})(1)+(\textcolor{verde}{0})(1)+(\textcolor{vermelho}{-1})=-1$ & 0 & $1-0=\textcolor{laranja}{1}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{0}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{0}+(\textcolor{laranja}{1})(1)=\textcolor{azul}{1}$,\; $w_2=\textcolor{verde}{0}+(\textcolor{laranja}{1})(1)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{-1}+(\textcolor{laranja}{1})=\textcolor{vermelho}{0}$} \\
 \bottomrule
 \end{tabular}
 \end{center}
-\small Na segunda passada, os quatro exemplos já são classificados corretamente.
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Seguimos para a próxima época com $w_1=\textcolor{azul}{1}$, $w_2=\textcolor{verde}{1}$, $b=\textcolor{vermelho}{0}$.
 \end{frame}
 
-\begin{frame}{O problema do XOR}
-\begin{columns}[c]
-\column{0.45\textwidth}
-\begin{tikzpicture}
-\begin{axis}[width=\textwidth, height=\textwidth, axis lines=left, xlabel={$x_1$}, ylabel={$x_2$}, xmin=-0.4, xmax=1.4, ymin=-0.4, ymax=1.4, xtick={0,1}, ytick={0,1}]
-\addplot[only marks, mark=*, azul, mark size=3pt] coordinates {(0,0)(1,1)};
-\addplot[only marks, mark=triangle*, laranja, mark size=3.5pt] coordinates {(0,1)(1,0)};
-\end{axis}
-\end{tikzpicture}
-\column{0.52\textwidth}
-Nenhuma reta separa as classes. Por contradição, seriam necessárias:
-\begin{itemize}\small
- \item $b<0$ e $w_1+w_2+b<0$,
- \item $w_1+b\ge0$ e $w_2+b\ge0$.
-\end{itemize}
-\small Somando as duas últimas: $w_1+w_2+2b\ge0$, logo $w_1+w_2+b\ge -b>0$. Isso contradiz a segunda desigualdade da primeira linha.
-
-\vspace{1mm}
-Minsky e Papert (1969) apontaram esse limite.
-\end{columns}
-\end{frame}
-
-\begin{frame}{Duas camadas resolvem o XOR}
-\centering
-\begin{tikzpicture}[x=2.3cm, y=1.3cm]
-  \node[neuronio] (a) at (0,0.6) {$x_1$}; \node[neuronio] (b) at (0,-0.6) {$x_2$};
-  \node[neuronio, fill=laranja!15] (h1) at (1,0.6) {\scriptsize OR}; \node[neuronio, fill=laranja!15] (h2) at (1,-0.6) {\scriptsize NAND};
-  \node[neuronio, fill=verde!20] (o) at (2,0) {\scriptsize AND};
-  \draw[seta] (a)--(h1); \draw[seta] (b)--(h1); \draw[seta] (a)--(h2); \draw[seta] (b)--(h2);
-  \draw[seta] (h1)--(o); \draw[seta] (h2)--(o); \draw[seta] (o)--++(0.6,0) node[right] {$y$};
-\end{tikzpicture}
-
-\vspace{4mm}\footnotesize
-\begin{tabular}{@{}lll@{}}
+\begin{frame}{Aprendendo AND: época 2}
+\scriptsize
+\begin{center}
+\begin{tabular}{@{}cc c l c c ccc@{}}
 \toprule
-Neurônio & Pesos & Viés \\
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
 \midrule
-OR & $(1,1)$ & $-0{,}5$ \\
-NAND & $(-1,-1)$ & $1{,}5$ \\
-AND (saída) & $(1,1)$ & $-1{,}5$ \\
+0 & 0 & 0 & $(\textcolor{azul}{1})(0)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{0})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{1}+(\textcolor{laranja}{-1})(0)=\textcolor{azul}{1}$,\; $w_2=\textcolor{verde}{1}+(\textcolor{laranja}{-1})(0)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{0}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-1}$} \\
+0 & 1 & 0 & $(\textcolor{azul}{1})(0)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-1})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{1}+(\textcolor{laranja}{-1})(0)=\textcolor{azul}{1}$,\; $w_2=\textcolor{verde}{1}+(\textcolor{laranja}{-1})(1)=\textcolor{verde}{0}$,\; $b=\textcolor{vermelho}{-1}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-2}$} \\
+1 & 0 & 0 & $(\textcolor{azul}{1})(1)+(\textcolor{verde}{0})(0)+(\textcolor{vermelho}{-2})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 1 & 1 & $(\textcolor{azul}{1})(1)+(\textcolor{verde}{0})(1)+(\textcolor{vermelho}{-2})=-1$ & 0 & $1-0=\textcolor{laranja}{1}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{1}+(\textcolor{laranja}{1})(1)=\textcolor{azul}{2}$,\; $w_2=\textcolor{verde}{0}+(\textcolor{laranja}{1})(1)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{-2}+(\textcolor{laranja}{1})=\textcolor{vermelho}{-1}$} \\
 \bottomrule
 \end{tabular}
-
-Entrada $(1,0)$: OR $=1$, NAND $=1$, saída $1$. Entrada $(1,1)$: OR $=1$, NAND $=0$, saída $0$.
+\end{center}
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Seguimos para a próxima época com $w_1=\textcolor{azul}{2}$, $w_2=\textcolor{verde}{1}$, $b=\textcolor{vermelho}{-1}$.
 \end{frame}
+
+\begin{frame}{Aprendendo AND: época 3}
+\scriptsize
+\begin{center}
+\begin{tabular}{@{}cc c l c c ccc@{}}
+\toprule
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
+\midrule
+0 & 0 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-1})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-1}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+0 & 1 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-1})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{2}+(\textcolor{laranja}{-1})(0)=\textcolor{azul}{2}$,\; $w_2=\textcolor{verde}{1}+(\textcolor{laranja}{-1})(1)=\textcolor{verde}{0}$,\; $b=\textcolor{vermelho}{-1}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-2}$} \\
+1 & 0 & 0 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{0})(0)+(\textcolor{vermelho}{-2})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{0}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{2}+(\textcolor{laranja}{-1})(1)=\textcolor{azul}{1}$,\; $w_2=\textcolor{verde}{0}+(\textcolor{laranja}{-1})(0)=\textcolor{verde}{0}$,\; $b=\textcolor{vermelho}{-2}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-3}$} \\
+1 & 1 & 1 & $(\textcolor{azul}{1})(1)+(\textcolor{verde}{0})(1)+(\textcolor{vermelho}{-3})=-2$ & 0 & $1-0=\textcolor{laranja}{1}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{1}+(\textcolor{laranja}{1})(1)=\textcolor{azul}{2}$,\; $w_2=\textcolor{verde}{0}+(\textcolor{laranja}{1})(1)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{-3}+(\textcolor{laranja}{1})=\textcolor{vermelho}{-2}$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Seguimos para a próxima época com $w_1=\textcolor{azul}{2}$, $w_2=\textcolor{verde}{1}$, $b=\textcolor{vermelho}{-2}$.
+\end{frame}
+
+\begin{frame}{Aprendendo AND: época 4}
+\scriptsize
+\begin{center}
+\begin{tabular}{@{}cc c l c c ccc@{}}
+\toprule
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
+\midrule
+0 & 0 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-2})=-2$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+0 & 1 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-2})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 0 & 0 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-2})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{1}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{2}+(\textcolor{laranja}{-1})(1)=\textcolor{azul}{1}$,\; $w_2=\textcolor{verde}{1}+(\textcolor{laranja}{-1})(0)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{-2}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-3}$} \\
+1 & 1 & 1 & $(\textcolor{azul}{1})(1)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-3})=-1$ & 0 & $1-0=\textcolor{laranja}{1}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{2}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{1}+(\textcolor{laranja}{1})(1)=\textcolor{azul}{2}$,\; $w_2=\textcolor{verde}{1}+(\textcolor{laranja}{1})(1)=\textcolor{verde}{2}$,\; $b=\textcolor{vermelho}{-3}+(\textcolor{laranja}{1})=\textcolor{vermelho}{-2}$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Seguimos para a próxima época com $w_1=\textcolor{azul}{2}$, $w_2=\textcolor{verde}{2}$, $b=\textcolor{vermelho}{-2}$.
+\end{frame}
+
+\begin{frame}{Aprendendo AND: época 5}
+\scriptsize
+\begin{center}
+\begin{tabular}{@{}cc c l c c ccc@{}}
+\toprule
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
+\midrule
+0 & 0 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{2})(0)+(\textcolor{vermelho}{-2})=-2$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{2}$ & $\textcolor{vermelho}{-2}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+0 & 1 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{2})(1)+(\textcolor{vermelho}{-2})=0$ & 1 & $0-1=\textcolor{laranja}{-1}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ erro: $w_1=\textcolor{azul}{2}+(\textcolor{laranja}{-1})(0)=\textcolor{azul}{2}$,\; $w_2=\textcolor{verde}{2}+(\textcolor{laranja}{-1})(1)=\textcolor{verde}{1}$,\; $b=\textcolor{vermelho}{-2}+(\textcolor{laranja}{-1})=\textcolor{vermelho}{-3}$} \\
+1 & 0 & 0 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-3})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 1 & 1 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-3})=0$ & 1 & $1-1=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Seguimos para a próxima época com $w_1=\textcolor{azul}{2}$, $w_2=\textcolor{verde}{1}$, $b=\textcolor{vermelho}{-3}$.
+\end{frame}
+
+\begin{frame}{Aprendendo AND: época 6}
+\scriptsize
+\begin{center}
+\begin{tabular}{@{}cc c l c c ccc@{}}
+\toprule
+$x_1$ & $x_2$ & $y$ & $u=\textcolor{azul}{w_1}x_1+\textcolor{verde}{w_2}x_2+\textcolor{vermelho}{b}$ & $\hat y$ & $\textcolor{laranja}{e}=y-\hat y$ & $\textcolor{azul}{w_1}$ & $\textcolor{verde}{w_2}$ & $\textcolor{vermelho}{b}$ \\
+\midrule
+0 & 0 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-3})=-3$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+0 & 1 & 0 & $(\textcolor{azul}{2})(0)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-3})=-2$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 0 & 0 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{1})(0)+(\textcolor{vermelho}{-3})=-1$ & 0 & $0-0=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+1 & 1 & 1 & $(\textcolor{azul}{2})(1)+(\textcolor{verde}{1})(1)+(\textcolor{vermelho}{-3})=0$ & 1 & $1-1=\textcolor{laranja}{0}$ & $\textcolor{azul}{2}$ & $\textcolor{verde}{1}$ & $\textcolor{vermelho}{-3}$ \\
+\multicolumn{9}{@{}l}{\quad$\Rightarrow$ $e=0$: nada muda} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\small Cores: \textcolor{azul}{$w_1$}, \textcolor{verde}{$w_2$}, \textcolor{vermelho}{$b$} e \textcolor{laranja}{erro $e$}.\\
+Nenhum erro: o neurônio aprendeu AND com $w_1=\textcolor{azul}{2}$, $w_2=\textcolor{verde}{1}$, $b=\textcolor{vermelho}{-3}$. Conferência: $(1,1)\Rightarrow u=0\ge0$; as outras entradas dão $u<0$.
+\end{frame}
+
 
 \begin{frame}{Perceptron multicamadas (MLP)}
 \centering
@@ -1154,13 +1234,56 @@ Entrada $(1,0)$: OR $=1$, NAND $=1$, saída $1$. Entrada $(1,1)$: OR $=1$, NAND 
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Função de perda}
-Treinar significa minimizar uma perda média sobre os dados:
-\begin{align*}
-\text{Regressão (MSE):}&\quad \mathcal{L}=\frac{1}{m}\sum_{i=1}^m(y_i-\hat{y}_i)^2\\
-\text{Classificação binária:}&\quad \mathcal{L}=-\frac{1}{m}\sum_{i=1}^m\big[y_i\log\hat{y}_i+(1-y_i)\log(1-\hat{y}_i)\big]\\
-\text{Multiclasse:}&\quad \mathcal{L}=-\frac{1}{m}\sum_{i=1}^m\sum_{k=1}^{K}y_{ik}\log\hat{y}_{ik}
-\end{align*}
+\begin{frame}{Função de perda: o que é}
+A \textbf{função de perda} $\mathcal{L}$ mede, com um único número, \textbf{o quanto a rede erra}. Treinar é ajustar $w$ e $b$ para minimizá-la.
+\begin{itemize}
+ \item $m$: número de exemplos; $i$: índice do exemplo.
+ \item $y_i$: valor correto (alvo); $\hat y_i$: previsão da rede.
+ \item Perda pequena $\Rightarrow$ previsões próximas dos alvos; perda grande $\Rightarrow$ rede errando muito.
+ \item O gradiente descendente usa a derivada de $\mathcal{L}$ para decidir como mudar os pesos.
+\end{itemize}
+\textbf{A escolha depende da tarefa:}
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Tarefa & Perda \\
+\midrule
+Prever um número (preço, temperatura) & MSE \\
+Duas classes (fraude ou não) & Entropia cruzada binária \\
+Várias classes (dígitos 0 a 9) & Entropia cruzada categórica \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+\begin{frame}{Regressão: erro quadrático médio (MSE)}
+\[ \mathcal{L}=\frac{1}{m}\sum_{i=1}^m(y_i-\hat{y}_i)^2 \]
+\begin{itemize}
+ \item \textbf{O que faz:} calcula a média do quadrado da diferença entre o valor real e o previsto.
+ \item \textbf{Por que o quadrado:} erros positivos e negativos não se cancelam, e erros grandes pesam muito mais. Errar 10 custa 100; errar 1 custa 1.
+ \item \textbf{Cuidado:} é sensível a outliers, pois um valor extremo domina a média.
+ \item \textbf{Onde é usada:} previsão de preços, demanda, temperatura e qualquer saída numérica contínua. Camada de saída linear.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Classificação binária: entropia cruzada binária}
+\[ \mathcal{L}=-\frac{1}{m}\sum_{i=1}^m\big[y_i\log\hat{y}_i+(1-y_i)\log(1-\hat{y}_i)\big] \]
+\begin{itemize}
+ \item \textbf{Entradas:} $y_i\in\{0,1\}$ e $\hat y_i\in(0,1)$ é a probabilidade da classe 1 (saída sigmoide).
+ \item \textbf{O que faz:} se $y_i=1$, sobra $-\log\hat y_i$; se $y_i=0$, sobra $-\log(1-\hat y_i)$. Só conta a probabilidade dada à classe correta.
+ \item \textbf{Efeito:} errar com confiança é punido muito. Se $y=1$ e $\hat y=0{,}01$, a perda é $-\log0{,}01\approx4{,}6$; se $\hat y=0{,}9$, é $\approx0{,}1$.
+ \item \textbf{Onde é usada:} detecção de fraude, spam, diagnóstico sim/não.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Multiclasse: entropia cruzada categórica}
+\[ \mathcal{L}=-\frac{1}{m}\sum_{i=1}^m\sum_{k=1}^{K}y_{ik}\log\hat{y}_{ik} \]
+\begin{itemize}
+ \item \textbf{Entradas:} $K$ classes; $y_{ik}=1$ se o exemplo $i$ pertence à classe $k$ e $0$ nas demais (one-hot); $\hat y_{ik}$ é a probabilidade prevista para a classe $k$ (saída softmax).
+ \item \textbf{O que faz:} como só um $y_{ik}$ vale 1, a perda é $-\log$ da probabilidade dada à classe correta.
+ \item \textbf{Relação:} com $K=2$ ela se reduz à entropia cruzada binária.
+ \item \textbf{Onde é usada:} reconhecimento de dígitos, classificação de imagens, de textos e de sentimentos.
+\end{itemize}
 \end{frame}
 
 \begin{frame}{Gradiente descendente}
@@ -1186,7 +1309,19 @@ Treinar significa minimizar uma perda média sobre os dados:
 \end{columns}
 \end{frame}
 
-\begin{frame}{Retropropagação}
+\begin{frame}{Retropropagação (backpropagation): o que é}
+\textbf{Problema:} uma rede tem milhares ou milhões de pesos. Como saber quanto cada um contribuiu para o erro e como corrigi-lo?\\[2mm]
+\textbf{Solução:} o algoritmo de retropropagação calcula $\dfrac{\partial\mathcal{L}}{\partial w}$ para \textbf{todos} os pesos de uma só vez.
+\begin{enumerate}
+ \item \textbf{Forward:} passa a entrada pela rede e calcula a previsão $\hat y$.
+ \item \textbf{Perda:} compara $\hat y$ com $y$ e calcula $\mathcal{L}$.
+ \item \textbf{Backward:} propaga o erro da saída até a entrada, calculando o gradiente de cada peso.
+ \item \textbf{Atualização:} $w\leftarrow w-\eta\,\dfrac{\partial\mathcal{L}}{\partial w}$ (gradiente descendente).
+\end{enumerate}
+\textbf{Importância:} reaproveita cálculos de cada camada, então custa quase o mesmo que um forward. Sem ele, treinar redes profundas seria inviável.
+\end{frame}
+
+\begin{frame}{Retropropagação: a matemática}
 \centering
 \begin{tikzpicture}[node distance=14mm]
   \node[caixa] (x) {$x$};
@@ -1199,18 +1334,16 @@ Treinar significa minimizar uma perda média sobre os dados:
   \draw[seta, vermelho, dashed] ([yshift=-3mm]z.south) -- node[below, font=\scriptsize, text=vermelho] {$\frac{\partial z}{\partial w}$} ([yshift=-3mm]x.south);
 \end{tikzpicture}
 
-\[ \frac{\partial\mathcal{L}}{\partial w}=\frac{\partial\mathcal{L}}{\partial a}\cdot\frac{\partial a}{\partial z}\cdot\frac{\partial z}{\partial w} \]
-\small A fase \textit{forward} calcula as saídas. A fase \textit{backward} propaga o erro com a regra da cadeia, reaproveitando cálculos de cada camada.
-\end{frame}
-
-\begin{frame}{Um passo de treinamento, com números}
-Neurônio sigmoide com $x=1$, $w=0{,}5$, $b=0$, alvo $y=1$ e perda $\mathcal{L}=\tfrac12(a-y)^2$.
-\begin{align*}
-a&=\sigma(0{,}5)\approx0{,}6225, \qquad \mathcal{L}\approx0{,}0713,\\
-\frac{\partial\mathcal{L}}{\partial w}&=(a-y)\,a(1-a)\,x\approx-0{,}0887,\\
-w_{\text{novo}}&=0{,}5-\eta\cdot(-0{,}0887)\approx0{,}589 \quad(\eta=1).
-\end{align*}
-\small O peso aumenta, a saída se aproxima de $1$ e a perda diminui.
+\[ \frac{\partial\mathcal{L}}{\partial w}=\frac{\partial\mathcal{L}}{\partial a}\cdot\frac{\partial a}{\partial z}\cdot\frac{\partial z}{\partial w} \qquad\text{(regra da cadeia)} \]
+\begin{flushleft}\footnotesize
+Cada fator é uma derivada local, fácil de calcular:
+\begin{itemize}
+ \item $\partial z/\partial w=x$ \quad (pois $z=wx+b$)
+ \item $\partial a/\partial z=\sigma(z)(1-\sigma(z))=a(1-a)$ \quad (derivada da sigmoide)
+ \item $\partial\mathcal{L}/\partial a$ depende da perda; com MSE, $\mathcal{L}=\tfrac12(a-y)^2$ e vale $a-y$.
+\end{itemize}
+Logo $\partial\mathcal{L}/\partial w=(a-y)\,a(1-a)\,x$. Com várias camadas, repete-se a regra da cadeia de trás para frente.
+\end{flushleft}
 \end{frame}
 
 \begin{frame}{Animação do aprendizado}
@@ -1274,14 +1407,6 @@ Difusão & imagens e vídeo & geração de imagens \\
 \textbf{Limitações}: grande consumo de dados e energia, pouca interpretabilidade e respostas plausíveis porém incorretas.
 \end{frame}
 
-\begin{frame}{Exercício}
-Use os pesos da rede do XOR e calcule a saída para $\mathbf{x}=(0,0)$.
-
-\pause
-\begin{block}{Resposta}
-OR: $u=-0{,}5$, logo $h_1=0$. NAND: $u=1{,}5$, logo $h_2=1$. Saída: $u=0+1-1{,}5=-0{,}5$, portanto $y=0$. Correto.
-\end{block}
-\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Aprendizado Não Supervisionado}
